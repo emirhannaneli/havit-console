@@ -1,0 +1,31 @@
+# Proprietary vendor installers & reverse-engineering workspace (NEVER commit!)
+orginals/
+originals/
+drivers/
+.re_workspace/
+*.exe
+*.dll
+*.msi
+*.asar
+*.ghidra/
+*.gpr
+*.rep/
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Rust / Tauri
+target/
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+graphify-out/
