@@ -90,12 +90,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
             ) : undefined
           }
         />
-        <SidebarItem
-          icon={Terminal}
-          label={t("app.title.diagnostics")}
-          active={view === "diagnostics"}
-          onClick={() => onNavigate("diagnostics")}
-        />
 
         <span className="px-2 pt-3.5 pb-1.5 text-[11px] font-semibold text-secondary">{t("sidebar.devicesGroup")}</span>
         {DEVICE_ITEMS.map((item) => {
@@ -119,7 +113,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
       </nav>
 
       <footer className="mt-auto flex h-11 flex-none items-center border-t border-separator px-3">
-        <span className="w-8" aria-hidden="true" />
+        <button
+          type="button"
+          aria-label={t("app.title.diagnostics")}
+          aria-current={view === "diagnostics" ? "page" : undefined}
+          title={t("app.title.diagnostics")}
+          onClick={() => onNavigate("diagnostics")}
+          className={cx(
+            "flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent hover:bg-fill-hover hover:text-label",
+            view === "diagnostics" ? "bg-fill text-label" : "text-secondary"
+          )}
+        >
+          <Terminal aria-hidden="true" className="h-4 w-4" />
+        </button>
         <span className="flex-1 text-center text-[11px] text-secondary tabular-nums">
           {t("sidebar.footer", { version: appVersion })}
         </span>
