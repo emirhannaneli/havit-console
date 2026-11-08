@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { AlertTriangle, Check, Headphones, Keyboard, RefreshCw } from "lucide-react";
 import { version as appVersion } from "../../../package.json";
 import type { DetectedDeviceStatus, FirmwareUpdate, FirmwareUpdateCheck } from "../../types";
-import { Button, ConnectionLabel, Notice, readPref, Row, Section, Select, Switch, writePref } from "../ui";
+import { Button, ConnectionLabel, Notice, readPref, Row, Section, Switch, writePref } from "../ui";
 import type { AppUpdate } from "./useAppUpdate";
 import { autoSendEnabled, setAutoSend } from "../../telemetry";
-import { LANGUAGES, useT, type MessageKey } from "../../i18n";
+import { useT, type MessageKey } from "../../i18n";
 
 const DEVICES: { id: string; titleKey: MessageKey; icon: React.ElementType }[] = [
   { id: "kb884l", titleKey: "device.kb884l", icon: Keyboard },
@@ -38,7 +38,7 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
   onCheck,
   onInstall,
 }) => {
-  const { t, lang, setLang } = useT();
+  const { t, lang } = useT();
   const [openNotes, setOpenNotes] = useState<string | null>(null);
   const [autoCheck, setAutoCheck] = useState(() => readPref(AUTO_CHECK_PREF, true));
   const [shareReports, setShareReports] = useState(autoSendEnabled);
@@ -238,14 +238,6 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
               setShareReports(v);
               setAutoSend(v);
             }}
-          />
-        </Row>
-        <Row label={t("common.language")} htmlFor="ui-language">
-          <Select
-            id="ui-language"
-            value={lang}
-            options={LANGUAGES.map((l) => ({ value: l.id, label: l.label }))}
-            onChange={setLang}
           />
         </Row>
       </Section>

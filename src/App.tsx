@@ -15,11 +15,11 @@ import { AUTO_CHECK_PREF, UpdatesView } from "./components/updates/UpdatesView";
 import { useAppUpdate } from "./components/updates/useAppUpdate";
 import { FirmwareDialog } from "./components/updates/FirmwareDialog";
 import { ONBOARDED_PREF, OnboardingSheet } from "./components/OnboardingSheet";
-import { Button, readPref, StatusDot } from "./components/ui";
+import { Button, readPref, Select, StatusDot } from "./components/ui";
 import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
 import { DeviceSettingsProvider } from "./state/DeviceSettings";
 import { reportInventory } from "./telemetry";
-import { useT, type MessageKey } from "./i18n";
+import { LANGUAGES, useT, type MessageKey } from "./i18n";
 
 const TITLES: Record<View, MessageKey> = {
   devices: "app.title.devices",
@@ -31,7 +31,7 @@ const TITLES: Record<View, MessageKey> = {
 };
 
 export default function App() {
-  const { t } = useT();
+  const { t, lang, setLang } = useT();
   const [view, setView] = useState<View>("devices");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [devices, setDevices] = useState<DetectedDeviceStatus[]>([]);
@@ -145,6 +145,13 @@ export default function App() {
                 </span>
               )}
             </h1>
+            <Select
+              label={t("common.language")}
+              value={lang}
+              options={LANGUAGES.map((l) => ({ value: l.id, label: l.label }))}
+              onChange={setLang}
+              className="h-8 min-w-0 border-transparent bg-transparent text-secondary hover:bg-fill"
+            />
             <Button
               variant="plain"
               onClick={scanNow}
