@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button, cx, Notice, Sheet, TextField } from "../ui";
+import { useT, type MessageKey } from "../../i18n";
 
 const MAX_STEPS = 64;
 const FIXED_DELAY_MS = 20;
@@ -15,19 +16,19 @@ interface Step {
   gap: number;
 }
 
-const DELAYS: { id: DelayMode; label: string; hint: string }[] = [
-  { id: "recorded", label: "Recorded delays", hint: "The real timing between keys" },
-  { id: "fixed", label: "Fixed delay", hint: `${FIXED_DELAY_MS} ms between steps` },
-  { id: "none", label: "No delay", hint: "As fast as possible" },
+const DELAYS: { id: DelayMode; labelKey: MessageKey; hintKey: MessageKey }[] = [
+  { id: "recorded", labelKey: "macro.delay.recorded", hintKey: "macro.delay.recorded.hint" },
+  { id: "fixed", labelKey: "macro.delay.fixed", hintKey: "macro.delay.fixed.hint" },
+  { id: "none", labelKey: "macro.delay.none", hintKey: "macro.delay.none.hint" },
 ];
 
-const PLAY: { id: PlayMode; label: string }[] = [
-  { id: "once", label: "Play once" },
-  { id: "hold", label: "Repeat while held" },
-  { id: "toggle", label: "Repeat until pressed again" },
+const PLAY: { id: PlayMode; labelKey: MessageKey }[] = [
+  { id: "once", labelKey: "macro.play.once" },
+  { id: "hold", labelKey: "macro.play.hold" },
+  { id: "toggle", labelKey: "macro.play.toggle" },
 ];
 
-const keyLabel = (e: KeyboardEvent) => (e.key === " " ? "Space" : e.key.length === 1 ? e.key.toUpperCase() : e.key);
+const keyLabel = (e: KeyboardEvent, space: string) => (e.key === " " ? space : e.key.length === 1 ? e.key.toUpperCase() : e.key);
 
 const fmtClock = (ms: number) => {
   const s = Math.floor(ms / 1000);
@@ -43,7 +44,8 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
   keyName,
   onClose,
 }) => {
-  const [name, setName] = useState("New macro");
+  const { t } = useT();
+  const [name, setName] = useState(() => t("macro.defaultName"));
   const [steps, setSteps] = useState<Step[]>([]);
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -69,7 +71,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
       const gap = last.current ? Math.round(now - last.current) : 0;
       last.current = now;
       setSteps((prev) =>
-        prev.length >= MAX_STEPS ? prev : [...prev, { down: e.type === "keydown", key: keyLabel(e), gap }]
+        prev.length >= MAX_STEPS ? prev : [...prev, { down: e.type === "keydown", key: keyLabel(e, t("macro.space")), gap }]
       );
     };
     window.addEventListener("keydown", onKey, true);
@@ -105,14 +107,14 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
     <Sheet open={open} onClose={close} dismissable={!recording} labelledBy="macro-title" className="w-[760px]">
       <div className="flex max-h-[calc(100vh-32px)] flex-col">
         <h2 id="macro-title" className="m-0 flex h-11 flex-none items-center justify-center border-b border-separator bg-sidebar px-4 text-[13px] font-semibold">
-          New macro · {keyName} key
+          {t("macro.title", { key: keyName })}
         </h2>
 
         <div className="flex min-h-0 flex-1 flex-wrap">
           <div className="flex min-w-[300px] flex-1 flex-col gap-3.5 px-5 py-[18px]">
             <div className="flex items-center gap-3">
               <label htmlFor="macro-name" className="text-secondary">
-                Ad
+                {t("macro.name")}
               </label>
               <TextField id="macro-name" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
             </div>
@@ -128,27 +130,25 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                   aria-hidden="true"
                   className={cx("h-2.5 w-2.5", recording ? "rounded-[2px] bg-white" : "rounded-full bg-on-accent")}
                 />
-                {recording ? "Stop recording" : "Start recording"}
+                {recording ? t("macro.stop") : t("macro.start")}
               </Button>
               <span role="status" aria-live="polite" className="min-w-[160px] flex-1 text-xs text-secondary">
-                {recording
-                  ? "Recording. Press keys; Esc stops."
-                  : "Keys pressed while recording are only added to the list."}
+                {recording ? t("macro.recording") : t("macro.idle")}
               </span>
               <span className="font-semibold tabular-nums">{fmtClock(elapsed)}</span>
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-1.5">
               <span className="px-1 text-[11px] font-semibold text-secondary">
-                Steps ({steps.length}/{MAX_STEPS})
+                {t("macro.steps", { count: steps.length, max: MAX_STEPS })}
               </span>
               <ol
-                aria-label="Macro steps"
+                aria-label={t("macro.steps.aria")}
                 className="m-0 flex h-[220px] list-none flex-col divide-y divide-separator overflow-y-auto rounded-[10px] border border-separator bg-card p-0"
               >
                 {steps.length === 0 && (
                   <li className="flex flex-1 items-center justify-center px-6 text-center text-xs leading-4 text-secondary">
-                    No steps yet. Start recording and press keys; every press and release is added here.
+                    {t("macro.empty")}
                   </li>
                 )}
                 {steps.map((s, i) => (
@@ -161,13 +161,13 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                       )}
                     >
                       <span aria-hidden="true">{s.down ? "↓" : "↑"}</span>
-                      <span className="sr-only">{s.down ? "Press" : "Release"}</span>
+                      <span className="sr-only">{s.down ? t("macro.press") : t("macro.release")}</span>
                     </span>
                     <span className="flex-1 font-medium">{s.key}</span>
                     <span className="text-xs text-secondary tabular-nums">{shownDelay(s, i)}</span>
                     <Button
                       variant="plain"
-                      aria-label={`Delete step ${i + 1}`}
+                      aria-label={t("macro.deleteStep", { n: i + 1 })}
                       disabled={recording}
                       onClick={() => setSteps((prev) => prev.filter((_, j) => j !== i))}
                       className="h-7 w-7 px-0 text-secondary"
@@ -182,7 +182,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
 
           <aside className="flex w-[240px] flex-none flex-col gap-4 border-l border-separator bg-sidebar px-4 py-[18px] max-sm:w-full max-sm:border-l-0 max-sm:border-t">
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Delays</legend>
+              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">{t("macro.delays")}</legend>
               {DELAYS.map((d) => (
                 <label key={d.id} className="flex min-h-8 cursor-pointer items-start gap-2">
                   <input
@@ -193,14 +193,14 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                     className="mt-0.5 h-3.5 w-3.5"
                   />
                   <span className="flex flex-col gap-px">
-                    <span>{d.label}</span>
-                    <span className="text-[11px] leading-[14px] text-secondary">{d.hint}</span>
+                    <span>{t(d.labelKey)}</span>
+                    <span className="text-[11px] leading-[14px] text-secondary">{t(d.hintKey, { ms: FIXED_DELAY_MS })}</span>
                   </span>
                 </label>
               ))}
             </fieldset>
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Playback</legend>
+              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">{t("macro.playback")}</legend>
               {PLAY.map((p) => (
                 <label key={p.id} className="flex min-h-7 cursor-pointer items-center gap-2">
                   <input
@@ -210,7 +210,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                     onChange={() => setPlay(p.id)}
                     className="h-3.5 w-3.5"
                   />
-                  {p.label}
+                  {t(p.labelKey)}
                 </label>
               ))}
             </fieldset>
@@ -218,15 +218,15 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
         </div>
 
         <div className="flex flex-none flex-col gap-2 border-t border-separator bg-sidebar px-5 py-3">
-          <Notice tone="info" title="Saving macros to the keyboard isn’t supported yet">
-            You can record here; writing to the keyboard isn’t supported yet.
+          <Notice tone="info" title={t("macro.notice.title")}>
+            {t("macro.notice.body")}
           </Notice>
           <div className="flex justify-end gap-2">
             <Button onClick={close} disabled={recording}>
-              Close
+              {t("common.close")}
             </Button>
             <Button variant="primary" disabled className="min-w-[110px]">
-              Save to device
+              {t("macro.saveDevice")}
             </Button>
           </div>
         </div>

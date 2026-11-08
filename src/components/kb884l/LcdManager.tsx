@@ -10,18 +10,9 @@ import {
   saveTempMediaFile,
   loadKb884lScreen,
 } from "../../api";
+import { useT } from "../../i18n";
 
-const FIT_OPTIONS: { id: LcdFit; label: string }[] = [
-  { id: "fit", label: "Fit" },
-  { id: "fill", label: "Fill" },
-  { id: "stretch", label: "Stretch" },
-];
-
-const FIT_HINT: Record<LcdFit, string> = {
-  fit: "Shows the whole image; black bars fill any aspect-ratio gap.",
-  fill: "Fills the screen; overflowing edges are cropped.",
-  stretch: "Fills the screen by stretching; the aspect ratio changes.",
-};
+const FIT_IDS: LcdFit[] = ["fit", "fill", "stretch"];
 
 /** What the preview is showing: a file picked now, or the last known screen content. */
 type PreviewSource = "file" | "app" | "vendor" | null;
@@ -31,6 +22,7 @@ interface LcdManagerProps {
 }
 
 export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
+  const { t } = useT();
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [frames, setFrames] = useState<LcdFramePreview[]>([]);
   const [activeFrameIndex, setActiveFrameIndex] = useState(0);
@@ -88,7 +80,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       if (!path) return;
       await loadFile(path);
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Couldn’t choose the file: ${err}` });
+      setStatusMsg({ type: "error", text: t("screen.error.file", { error: String(err) }) });
     }
   };
 
@@ -109,7 +101,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
         onPreviewUpdate(decodedFrames[0].data_url);
       }
     } catch (err) {
-      if (isLatest()) setStatusMsg({ type: "error", text: `Couldn’t build the preview: ${err}` });
+      if (isLatest()) setStatusMsg({ type: "error", text: t("screen.error.preview", { error: String(err) }) });
     } finally {
       if (isLatest()) setLoadingPreview(false);
     }
@@ -134,7 +126,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
   const handleUploadToKeyboard = async () => {
     if (!selectedFilePath) {
-      setStatusMsg({ type: "error", text: "Choose an image or GIF first." });
+      setStatusMsg({ type: "error", text: t("screen.error.chooseFirst") });
       return;
     }
     try {
@@ -146,7 +138,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       setSelectedFilePath(null);
       setStatusMsg({ type: "success", text: res });
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Upload failed: ${err}` });
+      setStatusMsg({ type: "error", text: t("screen.error.upload", { error: String(err) }) });
     } finally {
       setUploading(false);
     }
@@ -159,7 +151,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       const res = await syncKb884lClock(uploadSlot);
       setStatusMsg({ type: "success", text: res });
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Clock sync failed: ${err}` });
+      setStatusMsg({ type: "error", text: t("screen.error.clock", { error: String(err) }) });
     } finally {
       setClockSyncing(false);
     }
@@ -172,9 +164,9 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
   const sourceNote =
     previewSource === "app"
-      ? `Last known screen content${onScreenSlot !== null ? ` (slot ${onScreenSlot + 1})` : ""}. The screen can’t be read back, so this is the last upload from this app.`
+      ? t("screen.source.app", { slot: onScreenSlot !== null ? t("screen.source.slot", { slot: onScreenSlot + 1 }) : "" })
       : previewSource === "vendor"
-        ? "Showing the last upload from the Havit app. The screen can’t be read back, so it may differ if it was changed since."
+        ? t("screen.source.vendor")
         : null;
 
   const currentPreviewDataUrl = frames[activeFrameIndex]?.data_url;
@@ -183,8 +175,8 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
   return (
     <>
       <Section
-        title="Screen"
-        footer={sourceNote ?? "GIF, PNG, JPG and WEBP are supported. The screen shows 160×96 pixels in 65 thousand colors; the preview matches the keyboard."}
+        title={t("screen.title")}
+        footer={sourceNote ?? t("screen.footer")}
       >
         <div className="flex flex-wrap items-stretch gap-4 p-3.5">
           <div className="flex flex-none flex-col items-center gap-2">
@@ -192,20 +184,20 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
               {currentPreviewDataUrl ? (
                 <img
                   src={currentPreviewDataUrl}
-                  alt="Screen preview"
+                  alt={t("screen.preview.alt")}
                   className="pixelated h-full w-full object-contain"
                 />
               ) : (
                 <span className="flex flex-col items-center gap-1.5 text-[11px] text-[#9a9a9a]">
                   <FileImage aria-hidden="true" className="h-7 w-7 opacity-60" />
-                  No media selected
+                  {t("screen.noMedia")}
                 </span>
               )}
               {frames.length > 1 && (
                 <button
                   type="button"
                   onClick={() => setIsPlaying(!isPlaying)}
-                  aria-label={isPlaying ? "Pause animation" : "Play animation"}
+                  aria-label={isPlaying ? t("screen.pause") : t("screen.play")}
                   className="absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-black/60 text-white"
                 >
                   {isPlaying ? (
@@ -218,8 +210,8 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
             </div>
             <span className="text-[11px] text-secondary tabular-nums">
               {frames.length > 0
-                ? `Frame ${activeFrameIndex + 1} of ${frames.length} · ${frames[activeFrameIndex]?.delay_ms} ms`
-                : "160 × 96 pixels"}
+                ? t("screen.frameOf", { index: activeFrameIndex + 1, count: frames.length, ms: frames[activeFrameIndex]?.delay_ms ?? 0 })
+                : t("screen.size")}
             </span>
           </div>
 
@@ -233,21 +225,21 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
           >
             <Upload aria-hidden="true" className="h-6 w-6 text-secondary" />
             <span className="font-medium">
-              {loadingPreview ? "Preparing preview…" : "Drop an image here or choose one"}
+              {loadingPreview ? t("screen.preparing") : t("screen.drop")}
             </span>
-            <span className="text-xs text-secondary">Animated GIFs are decoded frame by frame</span>
+            <span className="text-xs text-secondary">{t("screen.gifHint")}</span>
           </button>
         </div>
 
         {frames.length > 1 && (
           <div className="flex flex-col gap-1.5 px-3.5 py-3">
-            <span className="text-xs text-secondary">Frames ({frames.length})</span>
+            <span className="text-xs text-secondary">{t("screen.frames", { count: frames.length })}</span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {frames.map((f) => (
                 <button
                   key={f.index}
                   type="button"
-                  aria-label={`Frame ${f.index + 1}`}
+                  aria-label={t("screen.frame", { index: f.index + 1 })}
                   aria-pressed={activeFrameIndex === f.index}
                   onClick={() => {
                     setIsPlaying(false);
@@ -266,18 +258,23 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
           </div>
         )}
 
-        <Row label="Placement" description={FIT_HINT[fit]}>
-          <Segmented label="Image placement" options={FIT_OPTIONS} value={fit} onChange={handleFitChange} />
+        <Row label={t("screen.placement")} description={t(`screen.fit.hint.${fit}` as const)}>
+          <Segmented
+            label={t("screen.placement.aria")}
+            options={FIT_IDS.map((id) => ({ id, label: t(`screen.fit.${id}` as const) }))}
+            value={fit}
+            onChange={handleFitChange}
+          />
         </Row>
 
-        <Row label="Screen slot" htmlFor="lcd-slot">
+        <Row label={t("screen.slot")} htmlFor="lcd-slot">
           <Select
             id="lcd-slot"
             value={uploadSlot}
             options={[
-              { value: 0, label: "Slot 1 · default" },
-              { value: 1, label: "Slot 2" },
-              { value: 2, label: "Slot 3" },
+              { value: 0, label: t("screen.slot.default") },
+              { value: 1, label: t("screen.slot.n", { n: 2 }) },
+              { value: 2, label: t("screen.slot.n", { n: 3 }) },
             ]}
             onChange={setUploadSlot}
           />
@@ -285,15 +282,15 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
         <ActionRow status={status}>
           <Button variant="primary" onClick={handleUploadToKeyboard} disabled={uploading || !selectedFilePath || frames.length === 0}>
-            {uploading ? "Uploading…" : "Upload to keyboard"}
+            {uploading ? t("screen.uploading") : t("screen.upload")}
           </Button>
         </ActionRow>
       </Section>
 
-      <Section title="Clock">
-        <Row label="Sync computer time" description="Sets the clock on the screen to this computer’s time">
+      <Section title={t("screen.clock.title")}>
+        <Row label={t("screen.clock.sync")} description={t("screen.clock.desc")}>
           <Button onClick={handleSyncClock} disabled={clockSyncing}>
-            {clockSyncing ? "Syncing…" : "Sync"}
+            {clockSyncing ? t("screen.clock.syncing") : t("screen.clock.button")}
           </Button>
         </Row>
       </Section>

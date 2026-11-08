@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   Info,
 } from "lucide-react";
+import { useT } from "../i18n";
 
 export const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -453,12 +454,15 @@ export const StatusDot: React.FC<{ on: boolean }> = ({ on }) => (
   />
 );
 
-export const ConnectionLabel: React.FC<{ connected: boolean }> = ({ connected }) => (
-  <span className="flex flex-none items-center gap-1.5 text-xs text-secondary">
-    <StatusDot on={connected} />
-    {connected ? "Connected" : "Not connected"}
-  </span>
-);
+export const ConnectionLabel: React.FC<{ connected: boolean }> = ({ connected }) => {
+  const { t } = useT();
+  return (
+    <span className="flex flex-none items-center gap-1.5 text-xs text-secondary">
+      <StatusDot on={connected} />
+      {connected ? t("common.connected") : t("common.notConnected")}
+    </span>
+  );
+};
 
 export type Tone = "info" | "warning" | "success" | "error";
 

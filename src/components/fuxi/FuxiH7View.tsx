@@ -12,12 +12,14 @@ import {
   setFuxiBalance,
   setFuxiMic,
 } from "../../api";
+import { useT } from "../../i18n";
 
 interface FuxiH7ViewProps {
   connected: boolean;
 }
 
 export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
+  const { t } = useT();
   const [audioStatus, setAudioStatus] = useState<FuxiAudioEndpointStatus>({
     speaker_found: true,
     speaker_name: "Havit Fuxi-H7 Audio",
@@ -78,9 +80,8 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
   return (
     <>
       {!connected && (
-        <Notice tone="warning" title="Fuxi-H7 not detected">
-          You’re in preview mode. Plug in the USB receiver or cable and choose
-          “Scan devices”.
+        <Notice tone="warning" title={t("headset.notDetected.title")}>
+          {t("headset.notDetected.body")}
         </Notice>
       )}
 

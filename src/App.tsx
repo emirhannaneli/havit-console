@@ -19,17 +19,19 @@ import { Button, readPref, StatusDot } from "./components/ui";
 import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
 import { DeviceSettingsProvider } from "./state/DeviceSettings";
 import { reportInventory } from "./telemetry";
+import { useT, type MessageKey } from "./i18n";
 
-const TITLES: Record<View, string> = {
-  devices: "Devices",
-  kb884l: "KB884L Keyboard",
-  "fuxi-h7": "Fuxi-H7 Headset",
-  profiles: "Profiles",
-  updates: "Updates",
-  diagnostics: "Diagnostics",
+const TITLES: Record<View, MessageKey> = {
+  devices: "app.title.devices",
+  kb884l: "device.kb884l",
+  "fuxi-h7": "device.fuxi",
+  profiles: "app.title.profiles",
+  updates: "app.title.updates",
+  diagnostics: "app.title.diagnostics",
 };
 
 export default function App() {
+  const { t } = useT();
   const [view, setView] = useState<View>("devices");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [devices, setDevices] = useState<DetectedDeviceStatus[]>([]);
@@ -117,9 +119,7 @@ export default function App() {
           <header className="flex h-[52px] flex-none items-center gap-2 border-b border-separator bg-sidebar px-4">
             <Button
               variant="plain"
-              aria-label={
-                sidebarOpen ? "Hide sidebar" : "Show sidebar"
-              }
+              aria-label={sidebarOpen ? t("app.sidebar.hide") : t("app.sidebar.show")}
               aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen((o) => !o)}
               className="h-8 w-8 px-0 text-secondary"
@@ -129,7 +129,7 @@ export default function App() {
             {isDeviceView && (
               <Button
                 variant="plain"
-                aria-label="Back to Devices"
+                aria-label={t("app.back")}
                 onClick={() => setView("devices")}
                 className="h-8 w-8 px-0 text-secondary"
               >
@@ -137,11 +137,11 @@ export default function App() {
               </Button>
             )}
             <h1 className="m-0 ml-1 mr-auto flex min-w-0 items-center gap-2.5 text-[15px] leading-5 font-semibold">
-              <span className="truncate">{TITLES[view]}</span>
+              <span className="truncate">{t(TITLES[view])}</span>
               {isDeviceView && (
                 <span className="flex flex-none items-center gap-1.5 text-xs font-normal text-secondary">
                   <StatusDot on={currentDevice?.connected ?? false} />
-                  {currentDevice?.connected ? "Connected" : "Not connected"}
+                  {currentDevice?.connected ? t("common.connected") : t("common.notConnected")}
                 </span>
               )}
             </h1>
@@ -155,7 +155,7 @@ export default function App() {
                 aria-hidden="true"
                 className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
               />
-              {loading ? "Scanning…" : "Scan devices"}
+              {loading ? t("app.scanning") : t("app.scan")}
             </Button>
           </header>
 

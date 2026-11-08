@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FlaskConical, Headphones, Keyboard, Usb } from "lucide-react";
 import type { DetectedDeviceStatus } from "../types";
 import type { View } from "./Sidebar";
+import { useT, type MessageKey } from "../i18n";
 import { CompatibilityReport } from "./CompatibilityReport";
 import { Button, ConnectionLabel, NavRow, Notice, Section } from "./ui";
 
@@ -13,20 +14,24 @@ interface DevicesViewProps {
   updateCount: number;
 }
 
-const KNOWN: { id: "kb884l" | "fuxi-h7"; title: string; icon: React.ElementType }[] = [
-  { id: "kb884l", title: "KB884L Keyboard", icon: Keyboard },
-  { id: "fuxi-h7", title: "Fuxi-H7 Headset", icon: Headphones },
+const KNOWN: { id: "kb884l" | "fuxi-h7"; titleKey: MessageKey; icon: React.ElementType }[] = [
+  { id: "kb884l", titleKey: "device.kb884l", icon: Keyboard },
+  { id: "fuxi-h7", titleKey: "device.fuxi", icon: Headphones },
 ];
 
-export const BetaBadge: React.FC<{ className?: string }> = ({ className }) => (
-  <span
-    className={`inline-flex h-[18px] items-center rounded-full bg-fill px-1.5 text-[10px] font-semibold tracking-wide text-accent-text uppercase ${className ?? ""}`}
-  >
-    Beta
-  </span>
-);
+export const BetaBadge: React.FC<{ className?: string }> = ({ className }) => {
+  const { t } = useT();
+  return (
+    <span
+      className={`inline-flex h-[18px] items-center rounded-full bg-fill px-1.5 text-[10px] font-semibold tracking-wide text-accent-text uppercase ${className ?? ""}`}
+    >
+      {t("common.beta")}
+    </span>
+  );
+};
 
 export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scanError, onOpen, updateCount }) => {
+  const { t, tp } = useT();
   const scanned = devices.length > 0;
   const [updateDismissed, setUpdateDismissed] = useState(false);
   const [report, setReport] = useState<{ open: boolean; deviceId?: string }>({ open: false });
@@ -36,49 +41,46 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scan
   return (
     <>
       {scanError && (
-        <Notice tone="error" title="Couldn’t scan devices">
-          {scanError} · Check the USB connection and choose “Scan devices”.
+        <Notice tone="error" title={t("devices.scanError.title")}>
+          {t("devices.scanError.body", { error: scanError })}
         </Notice>
       )}
 
       {updateCount > 0 && !updateDismissed && (
         <Notice
           tone="info"
-          title={updateCount === 1 ? "Firmware update available" : `${updateCount} firmware updates available`}
+          title={tp("devices.fwNotice.title", updateCount)}
           actions={
             <>
-              <Button onClick={() => setUpdateDismissed(true)}>Later</Button>
+              <Button onClick={() => setUpdateDismissed(true)}>{t("common.later")}</Button>
               <Button variant="primary" onClick={() => onOpen("updates")}>
-                Go to Updates
+                {t("devices.fwNotice.go")}
               </Button>
             </>
           }
         >
-          The device stops responding for about a minute while it updates.
+          {t("devices.fwNotice.body")}
         </Notice>
       )}
 
-      <Section
-        title="Devices"
-        footer="A newly connected Havit device appears here within a few seconds."
-      >
-        {KNOWN.map(({ id, title, icon: Icon }) => {
+      <Section title={t("devices.section.title")} footer={t("devices.section.footer")}>
+        {KNOWN.map(({ id, titleKey, icon: Icon }) => {
           const d = devices.find((x) => x.id === id);
           const connected = d?.connected ?? false;
           const description = !scanned
             ? loading
-              ? "Scanning…"
-              : "Not scanned yet"
+              ? t("app.scanning")
+              : t("devices.notScanned")
             : connected
-              ? [d?.connection_type, d?.firmware_version && `Version ${d.firmware_version}`]
+              ? [d?.connection_type, d?.firmware_version && t("common.version", { version: d.firmware_version })]
                   .filter(Boolean)
                   .join(" · ")
-              : "Not connected";
+              : t("common.notConnected");
           return (
             <NavRow
               key={id}
               icon={<Icon aria-hidden="true" className="h-5 w-5 text-label" />}
-              title={title}
+              title={t(titleKey)}
               description={description}
               trailing={<ConnectionLabel connected={connected} />}
               onClick={() => onOpen(id)}
@@ -88,10 +90,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scan
       </Section>
 
       {others.length > 0 && (
-        <Section
-          title="Other Havit devices"
-          footer="These devices are recognized but have no tested driver yet. A compatibility report tells us what to build next."
-        >
+        <Section title={t("devices.others.title")} footer={t("devices.others.footer")}>
           {others.map((d) => (
             <div key={d.id} className="flex min-h-14 flex-wrap items-center gap-3 px-3.5 py-2">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-fill">
@@ -103,33 +102,27 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scan
                   <BetaBadge />
                 </span>
                 <span className="text-xs leading-[15px] text-secondary">
-                  {d.support === "experimental" ? "Identified, not tested yet" : "Unrecognized Havit device"} ·{" "}
+                  {d.support === "experimental" ? t("devices.others.experimental") : t("devices.others.unknown")} ·{" "}
                   {d.vid_hex}:{d.pid_hex}
-                  {d.firmware_version ? ` · Version ${d.firmware_version}` : ""}
+                  {d.firmware_version ? ` · ${t("common.version", { version: d.firmware_version })}` : ""}
                 </span>
               </span>
-              <Button onClick={() => setReport({ open: true, deviceId: d.id })}>Report compatibility…</Button>
+              <Button onClick={() => setReport({ open: true, deviceId: d.id })}>{t("devices.report")}</Button>
             </div>
           ))}
         </Section>
       )}
 
-      <Section
-        title="Open beta"
-        footer="Havit Console is an independent, open-source community project. It is not affiliated with Havit."
-      >
+      <Section title={t("devices.beta.title")} footer={t("devices.beta.footer")}>
         <div className="flex min-h-14 flex-wrap items-center gap-3 px-3.5 py-2">
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-fill">
             <FlaskConical aria-hidden="true" className="h-5 w-5 text-accent-text" />
           </span>
           <span className="flex min-w-[200px] flex-1 flex-col gap-0.5">
-            <span className="font-semibold">Help test more devices</span>
-            <span className="text-xs leading-[15px] text-secondary">
-              Only the KB884L and Fuxi-H7 are verified. Tell us what works on yours; nothing is sent
-              without you seeing and submitting it.
-            </span>
+            <span className="font-semibold">{t("devices.beta.help")}</span>
+            <span className="text-xs leading-[15px] text-secondary">{t("devices.beta.helpBody")}</span>
           </span>
-          <Button onClick={() => setReport({ open: true })}>Report compatibility…</Button>
+          <Button onClick={() => setReport({ open: true })}>{t("devices.report")}</Button>
         </div>
       </Section>
 

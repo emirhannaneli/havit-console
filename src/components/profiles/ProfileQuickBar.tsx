@@ -3,6 +3,7 @@ import type { SavedProfile } from "../../types";
 import { fetchProfiles, saveProfileToStorage } from "../../api";
 import { describeProfile, useDeviceSettings, type DeviceId } from "../../state/DeviceSettings";
 import { ActionRow, Button, Row, Section, Select, TextField, type StatusMessage } from "../ui";
+import { useT } from "../../i18n";
 
 /** Apply a saved profile or save the current settings, right on the device page. */
 export const ProfileQuickBar: React.FC<{
@@ -11,6 +12,7 @@ export const ProfileQuickBar: React.FC<{
   /** Called after a profile was written to the device (e.g. to refetch volume). */
   onApplied?: () => void;
 }> = ({ device, connected, onApplied }) => {
+  const { t } = useT();
   const { captureProfile, applyProfile } = useDeviceSettings();
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -22,7 +24,7 @@ export const ProfileQuickBar: React.FC<{
   useEffect(() => {
     fetchProfiles(device)
       .then((list) => setProfiles(list.filter((p) => p.device_id === device)))
-      .catch((err) => setMsg({ tone: "error", text: `Couldn’t load profiles: ${err}` }));
+      .catch((err) => setMsg({ tone: "error", text: t("quickbar.loadFailed", { error: String(err) }) }));
   }, [device]);
 
   const selected = profiles.find((p) => p.id === selectedId) ?? null;
@@ -40,7 +42,7 @@ export const ProfileQuickBar: React.FC<{
       flash({ tone: "success", text: await applyProfile(selected) });
       onApplied?.();
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t apply: ${err}` });
+      flash({ tone: "error", text: t("quickbar.applyFailed", { error: String(err) }) });
     } finally {
       setBusy(false);
     }
@@ -64,9 +66,9 @@ export const ProfileQuickBar: React.FC<{
       setSelectedId(saved.id);
       setName("");
       setNaming(false);
-      flash({ tone: "success", text: `“${saved.name}” saved.` });
+      flash({ tone: "success", text: t("profiles.msg.saved", { name: saved.name }) });
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t save: ${err}` });
+      flash({ tone: "error", text: t("quickbar.saveFailed", { error: String(err) }) });
     } finally {
       setBusy(false);
     }
@@ -74,17 +76,17 @@ export const ProfileQuickBar: React.FC<{
 
   return (
     <Section
-      title="Profile"
-      footer="A profile is a snapshot of every setting on this page. Export and share profiles from the Profiles page."
+      title={t("quickbar.title")}
+      footer={t("quickbar.footer")}
     >
       <Row
-        label="Saved profile"
+        label={t("quickbar.saved")}
         description={
           selected
             ? describeProfile(selected)
             : profiles.length === 0
-              ? "No profiles yet; choose “Save…” to turn the current settings into one"
-              : "Choose a profile to apply"
+              ? t("quickbar.noneHint")
+              : t("quickbar.chooseHint")
         }
         htmlFor={`profile-${device}`}
       >
@@ -92,7 +94,7 @@ export const ProfileQuickBar: React.FC<{
           id={`profile-${device}`}
           value={selectedId}
           options={[
-            { value: "", label: profiles.length === 0 ? "No profiles" : "Choose a profile…", disabled: true },
+            { value: "", label: profiles.length === 0 ? t("quickbar.none") : t("quickbar.choose"), disabled: true },
             ...profiles.map((p) => ({ value: p.id, label: p.name })),
           ]}
           onChange={setSelectedId}
@@ -102,12 +104,12 @@ export const ProfileQuickBar: React.FC<{
 
       {naming && (
         <form onSubmit={handleSave} className="contents">
-          <Row label="Profile name" description="The current settings are saved under this name" htmlFor={`profile-name-${device}`}>
+          <Row label={t("quickbar.nameLabel")} description={t("quickbar.nameDesc")} htmlFor={`profile-name-${device}`}>
             <TextField
               id={`profile-name-${device}`}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Night gaming"
+              placeholder={t("profiles.namePlaceholder")}
               autoFocus
               required
               className="w-[220px]"
@@ -115,10 +117,10 @@ export const ProfileQuickBar: React.FC<{
           </Row>
           <ActionRow status={msg}>
             <Button onClick={() => setNaming(false)} disabled={busy}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
-              Save
+              {t("common.save")}
             </Button>
           </ActionRow>
         </form>
@@ -127,15 +129,15 @@ export const ProfileQuickBar: React.FC<{
       {!naming && (
         <ActionRow status={msg}>
           <Button onClick={() => setNaming(true)} disabled={busy}>
-            Save…
+            {t("quickbar.save")}
           </Button>
           <Button
             variant="primary"
             onClick={handleApply}
             disabled={busy || !selected || !connected}
-            title={!connected ? "Device not connected" : undefined}
+            title={!connected ? t("quickbar.notConnected") : undefined}
           >
-            {busy ? "Applying…" : "Apply"}
+            {busy ? t("common.applying") : t("common.apply")}
           </Button>
         </ActionRow>
       )}

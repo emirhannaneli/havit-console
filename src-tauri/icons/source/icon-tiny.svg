@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- 16–20 px variant: only the slanted H. -->
+  <rect width="1024" height="1024" rx="229" fill="#1A1A1C"/>
+  <g fill="#FF9230">
+    <polygon points="270,210 490,210 430,814 210,814"/>
+    <polygon points="534,210 754,210 694,814 474,814"/>
+    <polygon points="390,420 670,420 650,604 370,604"/>
+  </g>
+</svg>

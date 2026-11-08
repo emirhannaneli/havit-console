@@ -247,9 +247,8 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
                 show_main_window(tray.app_handle());
             }
         });
-    if let Some(icon) = app.default_window_icon() {
-        tray = tray.icon(icon.clone());
-    }
+    // Monochrome glyph for the notification area (the app icon's glow turns to mush at 16 px).
+    tray = tray.icon(tauri::image::Image::from_bytes(include_bytes!("../icons/tray-32.png"))?);
     tray.build(app)?;
     Ok(())
 }

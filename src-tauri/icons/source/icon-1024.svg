@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Havit Console app icon, concept B: slanted "H" (two bars = two devices, bridge = the
+       console), neon glow, faint hexagon. Master for every raster size ≥ 64 px. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2C2C30"/>
+      <stop offset="1" stop-color="#111113"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB15C"/>
+      <stop offset="1" stop-color="#FF9230"/>
+    </linearGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <clipPath id="sq"><rect width="1024" height="1024" rx="229"/></clipPath>
+  </defs>
+  <rect width="1024" height="1024" rx="229" fill="url(#bg)"/>
+  <g clip-path="url(#sq)">
+    <polygon points="512,96 880,308 880,716 512,928 144,716 144,308" fill="none" stroke="#FF9230" stroke-opacity="0.16" stroke-width="10"/>
+    <polygon points="-40,1024 1064,-80 1064,0 40,1024" fill="#FFFFFF" fill-opacity="0.03"/>
+  </g>
+  <g fill="#FF9230" filter="url(#glow)" opacity="0.75">
+    <polygon points="322,282 446,282 404,742 280,742"/>
+    <polygon points="578,282 702,282 660,742 536,742"/>
+    <polygon points="414,462 648,462 636,562 402,562"/>
+  </g>
+  <g fill="url(#acc)">
+    <polygon points="322,282 446,282 404,742 280,742"/>
+    <polygon points="578,282 702,282 660,742 536,742"/>
+    <polygon points="414,462 648,462 636,562 402,562"/>
+  </g>
+  <polygon points="712,282 768,282 748,410 692,410" fill="#FFFFFF" fill-opacity="0.9"/>
+  <polygon points="256,616 296,616 284,742 244,742" fill="#FFFFFF" fill-opacity="0.35"/>
+  <rect x="0" y="0" width="1024" height="1024" rx="229" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="6"/>
+</svg>

@@ -1,6 +1,7 @@
 import React from "react";
 import type { Kb884lLightingConfig } from "../../types";
 import { ActionRow, Button, Row, Section, Segmented, Select, Slider, Switch, cx, type StatusMessage } from "../ui";
+import { currentLang, translate, useT, type Lang, type MessageKey } from "../../i18n";
 
 // Mode ids as DeviceDriver.exe lists them (0x439a50). 20 (per-key custom) needs per-key data
 // and is not offered here.
@@ -27,8 +28,11 @@ const LIGHTING_MODES = [
   { id: 0, name: "LED Off" },
 ];
 
-export const lightingModeName = (id: number) =>
-  LIGHTING_MODES.find((m) => m.id === id)?.name ?? `Effect ${id}`;
+/** Localized effect name for a vendor mode id (works outside React too). */
+export const lightingModeName = (id: number, lang: Lang = currentLang()) =>
+  LIGHTING_MODES.some((m) => m.id === id)
+    ? translate(lang, `lighting.mode.${id}` as MessageKey)
+    : translate(lang, "lighting.mode.unknown", { id });
 
 /** Modes that draw their own colors, so the preset color is ignored. */
 const NO_COLOR_MODES = new Set([0, 6, 8]);
@@ -44,16 +48,16 @@ const DIRECTION_VALUES: Record<number, [number, number]> = {
 /** Vendor default direction when switching to a mode. */
 const defaultDirection = (mode: number) => DIRECTION_VALUES[mode]?.[0] ?? 0;
 
-const PRESET_COLORS = [
-  { name: "Orange", r: 255, g: 146, b: 48, hex: "#ff9230" },
-  { name: "Red", r: 255, g: 69, b: 58, hex: "#ff453a" },
-  { name: "Yellow", r: 255, g: 214, b: 10, hex: "#ffd60a" },
-  { name: "Green", r: 48, g: 209, b: 88, hex: "#30d158" },
-  { name: "Cyan", r: 100, g: 210, b: 255, hex: "#64d2ff" },
-  { name: "Blue", r: 10, g: 132, b: 255, hex: "#0a84ff" },
-  { name: "Purple", r: 191, g: 90, b: 242, hex: "#bf5af2" },
-  { name: "Pink", r: 255, g: 55, b: 95, hex: "#ff375f" },
-  { name: "White", r: 242, g: 242, b: 247, hex: "#f2f2f7" },
+const PRESET_COLORS: { key: MessageKey; r: number; g: number; b: number; hex: string }[] = [
+  { key: "lighting.color.orange", r: 255, g: 146, b: 48, hex: "#ff9230" },
+  { key: "lighting.color.red", r: 255, g: 69, b: 58, hex: "#ff453a" },
+  { key: "lighting.color.yellow", r: 255, g: 214, b: 10, hex: "#ffd60a" },
+  { key: "lighting.color.green", r: 48, g: 209, b: 88, hex: "#30d158" },
+  { key: "lighting.color.cyan", r: 100, g: 210, b: 255, hex: "#64d2ff" },
+  { key: "lighting.color.blue", r: 10, g: 132, b: 255, hex: "#0a84ff" },
+  { key: "lighting.color.purple", r: 191, g: 90, b: 242, hex: "#bf5af2" },
+  { key: "lighting.color.pink", r: 255, g: 55, b: 95, hex: "#ff375f" },
+  { key: "lighting.color.white", r: 242, g: 242, b: 247, hex: "#f2f2f7" },
 ];
 
 interface LightingPanelProps {
@@ -74,6 +78,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
   statusMessage,
   note,
 }) => {
+  const { t, lang } = useT();
   const currentHex = `#${config.r.toString(16).padStart(2, "0")}${config.g
     .toString(16)
     .padStart(2, "0")}${config.b.toString(16).padStart(2, "0")}`;
@@ -90,13 +95,13 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
 
   return (
     <Section
-      title="Lighting"
-      footer={`Applied settings are stored in the keyboard’s memory and survive unplugging.${note ? ` ${note}` : ""}`}
+      title={t("lighting.title")}
+      footer={`${t("lighting.footer")}${note ? ` ${note}` : ""}`}
     >
       {!NO_COLOR_MODES.has(config.mode) && (
-        <Row label="Random colors" description="The keyboard picks colors instead of the one selected here">
+        <Row label={t("lighting.random")} description={t("lighting.random.desc")}>
           <Switch
-            label="Random colors"
+            label={t("lighting.random")}
             checked={config.random_color}
             onChange={(random_color) => onChange({ ...config, random_color })}
           />
@@ -104,7 +109,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {!NO_COLOR_MODES.has(config.mode) && !config.random_color && (
-      <Row label="Color" description={currentHex.toUpperCase()}>
+      <Row label={t("lighting.color")} description={currentHex.toUpperCase()}>
         <div className="flex flex-wrap items-center gap-1.5">
           {PRESET_COLORS.map((col) => {
             const on = config.r === col.r && config.g === col.g && config.b === col.b;
@@ -112,7 +117,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
               <button
                 key={col.hex}
                 type="button"
-                aria-label={col.name}
+                aria-label={t(col.key)}
                 aria-pressed={on}
                 onClick={() => onChange({ ...config, r: col.r, g: col.g, b: col.b })}
                 className={cx(
@@ -127,7 +132,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
             );
           })}
           <label className="ml-1.5 flex items-center">
-            <span className="sr-only">Choose a custom color</span>
+            <span className="sr-only">{t("lighting.customColor")}</span>
             <input
               type="color"
               value={currentHex}
@@ -139,18 +144,18 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       </Row>
       )}
 
-      <Row label="Effect" htmlFor="kb-mode">
+      <Row label={t("lighting.effect")} htmlFor="kb-mode">
         <Select
           id="kb-mode"
           value={config.mode}
-          options={LIGHTING_MODES.map((m) => ({ value: m.id, label: m.name }))}
+          options={LIGHTING_MODES.map((m) => ({ value: m.id, label: lightingModeName(m.id, lang) }))}
           onChange={(mode) => onChange({ ...config, mode, direction: defaultDirection(mode) })}
           className="min-w-[200px]"
         />
       </Row>
 
       {config.mode !== 0 && (
-      <Row label="Brightness" htmlFor="kb-bright">
+      <Row label={t("lighting.brightness")} htmlFor="kb-bright">
         <Slider
           id="kb-bright"
           min={1}
@@ -163,7 +168,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {config.mode !== 0 && config.mode !== 1 && (
-      <Row label="Effect speed" htmlFor="kb-speed">
+      <Row label={t("lighting.speed")} htmlFor="kb-speed">
         <Slider
           id="kb-speed"
           min={1}
@@ -176,12 +181,12 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {direction && (
-        <Row label="Direction">
+        <Row label={t("lighting.direction")}>
           <Segmented
-            label="Effect direction"
+            label={t("lighting.direction.aria")}
             options={[
-              { id: String(direction[0]), label: "Normal" },
-              { id: String(direction[1]), label: "Reversed" },
+              { id: String(direction[0]), label: t("lighting.direction.normal") },
+              { id: String(direction[1]), label: t("lighting.direction.reversed") },
             ]}
             value={String(config.direction)}
             onChange={(v) => onChange({ ...config, direction: Number(v) })}
@@ -191,7 +196,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
 
       <ActionRow status={statusMessage}>
         <Button variant="primary" onClick={onApply} disabled={applying}>
-          {applying ? "Applying…" : "Apply to keyboard"}
+          {applying ? t("common.applying") : t("lighting.apply")}
         </Button>
       </ActionRow>
     </Section>

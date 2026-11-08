@@ -19,19 +19,21 @@ import {
   TextField,
   type StatusMessage,
 } from "../ui";
+import { useT, type MessageKey } from "../../i18n";
 
 interface ProfilesViewProps {
   devices: DetectedDeviceStatus[];
 }
 
-const DEVICE_LABEL: Record<DeviceId, string> = {
-  kb884l: "KB884L Keyboard",
-  "fuxi-h7": "Fuxi-H7 Headset",
+const DEVICE_LABEL: Record<DeviceId, MessageKey> = {
+  kb884l: "device.kb884l",
+  "fuxi-h7": "device.fuxi",
 };
 
 const isDeviceId = (v: unknown): v is DeviceId => v === "kb884l" || v === "fuxi-h7";
 
 export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
+  const { t, lang } = useT();
   const { captureProfile, applyProfile } = useDeviceSettings();
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   const [filter, setFilter] = useState<"all" | DeviceId>("all");
@@ -78,10 +80,10 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       });
       setNewName("");
       setCreating(false);
-      flash({ tone: "success", text: `“${name}” saved.` });
+      flash({ tone: "success", text: t("profiles.msg.saved", { name }) });
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t save the profile: ${err}` });
+      flash({ tone: "error", text: t("profiles.msg.saveFailed", { error: String(err) }) });
     }
   };
 
@@ -89,21 +91,21 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
     setBusyId(profile.id);
     setStatus(null);
     try {
-      flash({ tone: "success", text: `“${profile.name}”: ${await applyProfile(profile)}` });
+      flash({ tone: "success", text: t("profiles.msg.applied", { name: profile.name, message: await applyProfile(profile) }) });
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t apply “${profile.name}”: ${err}` });
+      flash({ tone: "error", text: t("profiles.msg.applyFailed", { name: profile.name, error: String(err) }) });
     } finally {
       setBusyId(null);
     }
   };
 
   const handleDelete = async (profile: SavedProfile) => {
-    if (!confirm(`Delete the profile “${profile.name}” permanently? This can’t be undone.`)) return;
+    if (!confirm(t("profiles.msg.confirmDelete", { name: profile.name }))) return;
     try {
       await deleteProfileFromStorage(profile.id);
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t delete: ${err}` });
+      flash({ tone: "error", text: t("profiles.msg.deleteFailed", { error: String(err) }) });
     }
   };
 
@@ -124,22 +126,22 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
     try {
       const raw = JSON.parse(await file.text()) as Partial<SavedProfile>;
       if (!isDeviceId(raw.device_id) || typeof raw.name !== "string") {
-        throw new Error("The file is not a Havit Console profile.");
+        throw new Error(t("profiles.msg.notProfile"));
       }
       const candidate: SavedProfile = {
         id: `${raw.device_id}_${Date.now()}`,
-        name: raw.name.trim() || "Imported profile",
+        name: raw.name.trim() || t("profiles.msg.importedName"),
         device_id: raw.device_id,
         updated_at: new Date().toISOString(),
         data: (raw.data ?? {}) as SavedProfile["data"],
       };
       const data = parseProfileData(candidate);
-      if (!data) throw new Error("The file holds no valid device settings.");
+      if (!data) throw new Error(t("profiles.msg.noData"));
       await saveProfileToStorage({ ...candidate, data });
-      flash({ tone: "success", text: `“${candidate.name}” imported.` });
+      flash({ tone: "success", text: t("profiles.msg.imported", { name: candidate.name }) });
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `Couldn’t import: ${err instanceof Error ? err.message : err}` });
+      flash({ tone: "error", text: t("profiles.msg.importFailed", { error: err instanceof Error ? err.message : String(err) }) });
     }
   };
 
@@ -148,18 +150,18 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
   return (
     <>
       {loadError && (
-        <Notice tone="error" title="Couldn’t load profiles">
+        <Notice tone="error" title={t("profiles.loadError")}>
           {loadError}
         </Notice>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented
-          label="Filter by device"
+          label={t("profiles.filter")}
           options={[
-            { id: "all", label: `All (${profiles.length})` },
-            { id: "kb884l", label: "Keyboard" },
-            { id: "fuxi-h7", label: "Headset" },
+            { id: "all", label: t("profiles.all", { count: profiles.length }) },
+            { id: "kb884l", label: t("profiles.keyboard") },
+            { id: "fuxi-h7", label: t("profiles.headset") },
           ]}
           value={filter}
           onChange={setFilter}
@@ -176,12 +178,12 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
           />
           <Button onClick={() => importRef.current?.click()}>
             <Upload aria-hidden="true" className="h-4 w-4" />
-            Import…
+            {t("profiles.import")}
           </Button>
           {!creating && (
             <Button variant="primary" onClick={() => setCreating(true)}>
               <Plus aria-hidden="true" className="h-4 w-4" />
-              New profile
+              {t("profiles.new")}
             </Button>
           )}
         </div>
@@ -190,13 +192,13 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       {creating && (
         <form onSubmit={handleCreate}>
           <Section
-            title="New profile"
-            footer="The selected device’s current settings are saved: lighting and advanced for the keyboard; equalizer, sound and microphone for the headset."
+            title={t("profiles.new")}
+            footer={t("profiles.new.footer")}
           >
-            <Row label="Name" htmlFor="prof-name">
+            <Row label={t("profiles.name")} htmlFor="prof-name">
               <TextField
                 id="prof-name"
-                placeholder="e.g. Night gaming"
+                placeholder={t("profiles.namePlaceholder")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 required
@@ -204,22 +206,22 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                 className="w-[240px] max-w-full"
               />
             </Row>
-            <Row label="Device" htmlFor="prof-device">
+            <Row label={t("profiles.device")} htmlFor="prof-device">
               <Select<DeviceId>
                 id="prof-device"
                 value={newDevice}
                 options={[
-                  { value: "kb884l", label: DEVICE_LABEL.kb884l },
-                  { value: "fuxi-h7", label: DEVICE_LABEL["fuxi-h7"] },
+                  { value: "kb884l", label: t(DEVICE_LABEL.kb884l) },
+                  { value: "fuxi-h7", label: t(DEVICE_LABEL["fuxi-h7"]) },
                 ]}
                 onChange={setNewDevice}
                 className="w-[240px]"
               />
             </Row>
             <ActionRow>
-              <Button onClick={() => setCreating(false)}>Cancel</Button>
+              <Button onClick={() => setCreating(false)}>{t("common.cancel")}</Button>
               <Button type="submit" variant="primary" disabled={!newName.trim()}>
-                Save
+                {t("common.save")}
               </Button>
             </ActionRow>
           </Section>
@@ -229,27 +231,27 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       {status && <Notice tone={status.tone} title={status.text} />}
 
       <Section
-        title="Saved profiles"
-        footer="Profiles are stored on this computer. “Apply” writes the settings to the device; if it’s not connected only the values in the app change."
+        title={t("profiles.saved.title")}
+        footer={t("profiles.saved.footer")}
       >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-3.5 py-10 text-center">
             <Layers aria-hidden="true" className="h-7 w-7 text-tertiary" />
-            <span className="font-semibold">No profiles yet</span>
+            <span className="font-semibold">{t("profiles.empty")}</span>
             <span className="text-xs text-secondary">
-              Adjust a device’s settings, then save them with “New profile”.
+              {t("profiles.empty.hint")}
             </span>
           </div>
         ) : (
           filtered.map((prof) => {
             const Icon = prof.device_id === "kb884l" ? Keyboard : Headphones;
-            const date = new Date(prof.updated_at).toLocaleDateString(undefined, {
+            const date = new Date(prof.updated_at).toLocaleDateString(lang, {
               day: "numeric",
               month: "short",
               hour: "2-digit",
               minute: "2-digit",
             });
-            const label = isDeviceId(prof.device_id) ? DEVICE_LABEL[prof.device_id] : prof.device_id;
+            const label = isDeviceId(prof.device_id) ? t(DEVICE_LABEL[prof.device_id]) : prof.device_id;
             const hasData = parseProfileData(prof) !== null;
             return (
               <div key={prof.id} className="flex min-h-14 flex-wrap items-center gap-3 px-3.5 py-2">
@@ -266,13 +268,13 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                   variant="primary"
                   onClick={() => handleApply(prof)}
                   disabled={busyId !== null || !hasData}
-                  title={!connected(prof.device_id) ? "Device not connected; only the settings in the app change" : undefined}
+                  title={!connected(prof.device_id) ? t("profiles.notConnectedHint") : undefined}
                 >
-                  {busyId === prof.id ? "Applying…" : "Apply"}
+                  {busyId === prof.id ? t("common.applying") : t("common.apply")}
                 </Button>
                 <Button
-                  aria-label={`Export the profile ${prof.name}`}
-                  title="Export"
+                  aria-label={t("profiles.exportAria", { name: prof.name })}
+                  title={t("common.export")}
                   onClick={() => handleExport(prof)}
                   className="w-8 px-0"
                 >
@@ -280,8 +282,8 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                 </Button>
                 <Button
                   variant="destructive"
-                  aria-label={`Delete the profile ${prof.name}`}
-                  title="Delete"
+                  aria-label={t("profiles.deleteAria", { name: prof.name })}
+                  title={t("common.delete")}
                   onClick={() => handleDelete(prof)}
                   className="w-8 px-0"
                 >

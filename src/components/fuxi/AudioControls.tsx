@@ -4,12 +4,13 @@ import type { FuxiAudioEndpointStatus } from "../../types";
 import { Button, Row, Section, Segmented, Slider, Switch } from "../ui";
 
 import type { RoomSize } from "../../types";
+import { useT, type MessageKey } from "../../i18n";
 export type { RoomSize };
 
-const ROOMS: { id: RoomSize; label: string }[] = [
-  { id: "small", label: "Small room" },
-  { id: "medium", label: "Living room" },
-  { id: "large", label: "Concert hall" },
+const ROOMS: { id: RoomSize; labelKey: MessageKey }[] = [
+  { id: "small", labelKey: "headset.room.small" },
+  { id: "medium", labelKey: "headset.room.medium" },
+  { id: "large", labelKey: "headset.room.large" },
 ];
 
 /**
@@ -43,19 +44,20 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
   roomSize,
   onRoomSizeChange,
 }) => {
+  const { t } = useT();
   const balancePos = Math.round(
     posFromBalance(status.left_balance, status.right_balance),
   );
   return (
     <Section
-      title="Sound"
+      title={t("headset.sound.title")}
       footer={
         status.speaker_found
-          ? `Output device: ${status.speaker_name}`
-          : "Waiting for the audio device. Make sure the headset’s USB receiver is plugged in."
+          ? t("headset.sound.output", { name: status.speaker_name })
+          : t("headset.sound.waiting")
       }
     >
-      <Row label="Volume" htmlFor="fx-vol">
+      <Row label={t("headset.volume")} htmlFor="fx-vol">
         <span className="flex items-center gap-2">
           <Volume1 aria-hidden="true" className="h-3.5 w-3.5 text-secondary" />
           <Slider
@@ -68,28 +70,28 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
               onVolumeChange(Number(e.target.value), status.speaker_muted)
             }
             valueText={
-              status.speaker_muted ? "Muted" : `${status.speaker_volume}%`
+              status.speaker_muted ? t("headset.muted") : `${status.speaker_volume}%`
             }
           />
         </span>
       </Row>
 
-      <Row label="Mute">
+      <Row label={t("headset.mute")}>
         <Switch
-          label="Mute"
+          label={t("headset.mute")}
           checked={status.speaker_muted}
           onChange={(muted) => onVolumeChange(status.speaker_volume, muted)}
         />
       </Row>
 
       <Row
-        label="Balance"
+        label={t("headset.balance")}
         description={
           balancePos === 50
-            ? "Centered"
+            ? t("headset.balance.centered")
             : balancePos < 50
-              ? `Shifted left · right ear ${status.right_balance}%`
-              : `Shifted right · left ear ${status.left_balance}%`
+              ? t("headset.balance.left", { pct: status.right_balance })
+              : t("headset.balance.right", { pct: status.left_balance })
         }
         htmlFor="fx-bal"
       >
@@ -112,18 +114,18 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
             onClick={() => onBalanceChange(100, 100)}
             disabled={balancePos === 50}
           >
-            Center
+            {t("headset.balance.center")}
           </Button>
         </span>
       </Row>
 
       <Row
-        label="7.1 virtual surround"
-        description="Improves directional cues in games; keep it off for music"
+        label={t("headset.surround")}
+        description={t("headset.surround.desc")}
         strong
       >
         <Switch
-          label="7.1 virtual surround"
+          label={t("headset.surround")}
           checked={surround71}
           onChange={onSurroundChange}
         />
@@ -131,12 +133,12 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
 
       {surround71 && (
         <Row
-          label="Room size"
-          description="How wide the surround reverb sounds"
+          label={t("headset.room")}
+          description={t("headset.room.desc")}
         >
           <Segmented
-            label="Room size"
-            options={ROOMS}
+            label={t("headset.room")}
+            options={ROOMS.map((r) => ({ id: r.id, label: t(r.labelKey) }))}
             value={roomSize}
             onChange={onRoomSizeChange}
           />

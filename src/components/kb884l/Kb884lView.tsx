@@ -16,19 +16,22 @@ import {
   type StateSource,
 } from "../../state/DeviceSettings";
 
-const sourceNote = (source: StateSource) =>
-  source === "app"
-    ? "Showing the settings last applied from this app."
-    : source === "vendor"
-      ? "Showing the settings stored by the Havit app."
-      : "The keyboard can’t report its settings; showing defaults.";
 import { Button, Notice, Row, Section, type StatusMessage } from "../ui";
+import { useT, type MessageKey } from "../../i18n";
+
+const SOURCE_NOTE: Record<"app" | "vendor" | "none", MessageKey> = {
+  app: "keyboard.source.app",
+  vendor: "keyboard.source.vendor",
+  none: "keyboard.source.none",
+};
+const sourceKey = (source: StateSource): MessageKey => SOURCE_NOTE[source ?? "none"];
 
 interface Kb884lViewProps {
   connected: boolean;
 }
 
 export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
+  const { t } = useT();
   const [layout, setLayout] = useState<Kb884lPhysicalLayout | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<KeyDef | null>(null);
@@ -69,7 +72,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
       setLightingMsg({ tone: "success", text: res });
       setTimeout(() => setLightingMsg(null), 4000);
     } catch (err) {
-      setLightingMsg({ tone: "error", text: `Couldn’t apply: ${err}` });
+      setLightingMsg({ tone: "error", text: t("keyboard.applyFailed", { error: String(err) }) });
     } finally {
       setApplyingLighting(false);
     }
@@ -84,7 +87,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
       setSettingsMsg({ tone: "success", text: res });
       setTimeout(() => setSettingsMsg(null), 4000);
     } catch (err) {
-      setSettingsMsg({ tone: "error", text: `Couldn’t save: ${err}` });
+      setSettingsMsg({ tone: "error", text: t("keyboard.saveFailed", { error: String(err) }) });
     } finally {
       setSavingSettings(false);
     }
@@ -93,15 +96,14 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
   return (
     <>
       {!connected && (
-        <Notice tone="warning" title="KB884L not detected">
-          You’re in preview mode; changes can’t be sent to the keyboard. Plug in
-          the USB cable and choose “Scan devices”.
+        <Notice tone="warning" title={t("keyboard.notDetected.title")}>
+          {t("keyboard.notDetected.body")}
         </Notice>
       )}
 
       <ProfileQuickBar device="kb884l" connected={connected} />
 
-      <section aria-label="Keyboard layout" className="flex flex-col gap-2">
+      <section aria-label={t("keyboard.layout")} className="flex flex-col gap-2">
         <div className="rounded-[10px] border border-separator bg-card p-4">
           {layout ? (
             <KeyboardSvgLayout
@@ -115,31 +117,30 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
           ) : (
             <p role="status" className="m-0 py-16 text-center text-secondary">
               {layoutError
-                ? `Couldn’t load the keyboard layout: ${layoutError}`
-                : "Loading keyboard layout…"}
+                ? t("keyboard.layout.error", { error: layoutError })
+                : t("keyboard.layout.loading")}
             </p>
           )}
         </div>
         <p className="m-0 px-1 text-[11px] leading-[14px] text-secondary">
-          Click a key to assign a macro. The screen image and lighting reflect
-          the settings below.
+          {t("keyboard.layout.hint")}
         </p>
       </section>
 
       <Section
-        title="Macro"
-        footer="Saving to the keyboard isn’t supported yet; recordings stay in this app."
+        title={t("keyboard.macro.title")}
+        footer={t("keyboard.macro.footer")}
       >
         <Row
-          label={selectedKey ? `${selectedKey.label} key` : "No key selected"}
+          label={selectedKey ? t("keyboard.key", { key: selectedKey.label }) : t("keyboard.macro.noKey")}
           description={
             selectedKey
-              ? "Record a key sequence for this key"
-              : "Select a key on the keyboard above"
+              ? t("keyboard.macro.recordDesc")
+              : t("keyboard.macro.selectDesc")
           }
         >
           <Button onClick={() => setMacroOpen(true)} disabled={!selectedKey}>
-            Record macro…
+            {t("keyboard.macro.record")}
           </Button>
         </Row>
       </Section>
@@ -160,7 +161,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
         onApply={handleApplyLighting}
         applying={applyingLighting}
         statusMessage={lightingMsg}
-        note={sourceNote(lightingSource)}
+        note={t(sourceKey(lightingSource))}
       />
 
       <SettingsPanel
@@ -169,7 +170,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
         onSave={handleSaveSettings}
         saving={savingSettings}
         statusMessage={settingsMsg}
-        note={sourceNote(settingsSource)}
+        note={t(sourceKey(settingsSource))}
       />
     </>
   );

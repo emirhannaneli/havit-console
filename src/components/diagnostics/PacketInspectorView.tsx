@@ -3,8 +3,10 @@ import { AlertCircle, ArrowDownLeft, ArrowUpRight, Check, Copy, Info, Search, Tr
 import type { PacketLogEntry } from "../../types";
 import { fetchPacketLogs, clearPacketLogs } from "../../api";
 import { Button, Select, cx } from "../ui";
+import { useT } from "../../i18n";
 
 export const PacketInspectorView: React.FC = () => {
+  const { t } = useT();
   const [logs, setLogs] = useState<PacketLogEntry[]>([]);
   const [deviceFilter, setDeviceFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,8 +69,8 @@ export const PacketInspectorView: React.FC = () => {
           <Search aria-hidden="true" className="h-3.5 w-3.5 flex-none" />
           <input
             type="search"
-            aria-label="Search packets"
-            placeholder="Search log…"
+            aria-label={t("diagnostics.search.aria")}
+            placeholder={t("diagnostics.search")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-label outline-none placeholder:text-tertiary"
@@ -76,12 +78,12 @@ export const PacketInspectorView: React.FC = () => {
         </label>
 
         <Select
-          label="Filter by device"
+          label={t("diagnostics.filter")}
           value={deviceFilter}
           options={[
-            { value: "all", label: "All devices" },
-            { value: "kb884l", label: "KB884L Keyboard" },
-            { value: "fuxi-h7", label: "Fuxi-H7 Headset" },
+            { value: "all", label: t("diagnostics.all") },
+            { value: "kb884l", label: t("device.kb884l") },
+            { value: "fuxi-h7", label: t("device.fuxi") },
           ]}
           onChange={setDeviceFilter}
         />
@@ -93,22 +95,20 @@ export const PacketInspectorView: React.FC = () => {
             onChange={(e) => setAutoScroll(e.target.checked)}
             className="m-0 h-3.5 w-3.5"
           />
-          Auto-scroll
+          {t("diagnostics.autoScroll")}
         </label>
 
         <Button variant="destructive" onClick={handleClear} disabled={logs.length === 0}>
           <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-          Clear
+          {t("diagnostics.clear")}
         </Button>
       </div>
 
-      <section aria-label="HID packet log" className="flex flex-col gap-2">
+      <section aria-label={t("diagnostics.log.aria")} className="flex flex-col gap-2">
         <div className="max-h-[calc(100vh-220px)] min-h-[320px] overflow-y-auto rounded-[10px] border border-separator bg-card font-mono text-xs">
           {filtered.length === 0 ? (
             <p className="m-0 px-4 py-20 text-center font-sans text-[13px] text-secondary">
-              {logs.length === 0
-                ? "Nothing logged yet. Change a device setting and the traffic appears here."
-                : "No packets match your search."}
+              {logs.length === 0 ? t("diagnostics.empty") : t("diagnostics.noMatch")}
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col divide-y divide-separator p-0">
@@ -142,11 +142,11 @@ export const PacketInspectorView: React.FC = () => {
                     </span>
                     {log.hex_preview && (
                       <span className="flex flex-none items-center gap-2">
-                        <span className="text-[11px] text-secondary">{log.byte_len} bytes</span>
+                        <span className="text-[11px] text-secondary">{t("diagnostics.bytes", { count: log.byte_len })}</span>
                         <Button
                           variant="plain"
-                          aria-label={copiedId === log.id ? "Copied" : "Copy hex bytes"}
-                          title="Copy hex bytes"
+                          aria-label={copiedId === log.id ? t("diagnostics.copied") : t("diagnostics.copyHex")}
+                          title={t("diagnostics.copyHex")}
                           onClick={() => handleCopyHex(log.id, log.hex_preview)}
                           className="h-7 w-7 px-0"
                         >
@@ -166,7 +166,7 @@ export const PacketInspectorView: React.FC = () => {
           <div ref={bottomRef} />
         </div>
         <p className="m-0 px-1 text-[11px] leading-[14px] text-secondary">
-          Live log of the traffic between the app and your devices. Share it when reporting a problem.
+          {t("diagnostics.footer")}
         </p>
       </section>
     </>

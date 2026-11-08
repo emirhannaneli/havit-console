@@ -3,16 +3,18 @@ import { AlertCircle, AlertTriangle, Check, Download, Keyboard } from "lucide-re
 import type { FirmwareUpdate } from "../../types";
 import { installFirmwareUpdate } from "../../api";
 import { Button, cx, Sheet } from "../ui";
+import { useT } from "../../i18n";
 
 type Phase = "confirm" | "progress" | "done" | "error";
 
-const formatSize = (bytes: number) =>
-  `${(bytes / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })} MB`;
+const formatSize = (bytes: number, lang: string) =>
+  `${(bytes / 1_000_000).toLocaleString(lang, { maximumFractionDigits: 1 })} MB`;
 
 export const FirmwareDialog: React.FC<{
   update: FirmwareUpdate | null;
   onClose: () => void;
 }> = ({ update, onClose }) => {
+  const { t, lang } = useT();
   const [phase, setPhase] = useState<Phase>("confirm");
   const [pct, setPct] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -52,23 +54,14 @@ export const FirmwareDialog: React.FC<{
   };
 
   const text: Record<Phase, [string, string]> = {
-    confirm: [
-      `Update ${update.device_name} firmware?`,
-      "The device stops responding for about a minute during the update, then restarts on its own.",
-    ],
-    progress: [
-      "Installing firmware…",
-      "Don’t unplug the device or put the computer to sleep. If it’s interrupted, you can retry from here.",
-    ],
-    done: ["Update complete", `${update.device_name} is now on version ${update.version}.`],
-    error: [
-      "Update failed",
-      "The device was not updated. Keep it plugged in and choose “Try again”, or copy the log and report the problem.",
-    ],
+    confirm: [t("firmware.confirm.title", { device: update.device_name }), t("firmware.confirm.body")],
+    progress: [t("firmware.progress.title"), t("firmware.progress.body")],
+    done: [t("firmware.done.title"), t("firmware.done.body", { device: update.device_name, version: update.version })],
+    error: [t("firmware.error.title"), t("firmware.error.body")],
   };
 
   const stage =
-    pct < 20 ? "Verifying package" : pct < 90 ? "Writing memory blocks" : "Verifying and restarting";
+    pct < 20 ? t("firmware.stage.verify") : pct < 90 ? t("firmware.stage.write") : t("firmware.stage.restart");
 
   const iconBg = phase === "done" ? "bg-success-dot" : phase === "error" ? "bg-danger" : "bg-accent";
   const Icon = phase === "done" ? Check : phase === "error" ? AlertCircle : phase === "progress" ? Keyboard : Download;
@@ -100,14 +93,14 @@ export const FirmwareDialog: React.FC<{
 
         {phase === "confirm" && (
           <dl className="m-0 ml-[72px] grid grid-cols-[60px_1fr] gap-x-2 gap-y-1.5 text-xs leading-[15px]">
-            <dt className="text-tertiary">Device</dt>
+            <dt className="text-tertiary">{t("firmware.device")}</dt>
             <dd className="m-0">{update.device_name}</dd>
-            <dt className="text-tertiary">Version</dt>
+            <dt className="text-tertiary">{t("firmware.version")}</dt>
             <dd className="m-0">
-              {update.current_version ?? "Unknown"} → {update.version}
+              {update.current_version ?? t("firmware.unknown")} → {update.version}
             </dd>
-            <dt className="text-tertiary">Size</dt>
-            <dd className="m-0">{formatSize(update.size_bytes)}</dd>
+            <dt className="text-tertiary">{t("firmware.size")}</dt>
+            <dd className="m-0">{formatSize(update.size_bytes, lang)}</dd>
           </dl>
         )}
 
@@ -115,7 +108,7 @@ export const FirmwareDialog: React.FC<{
           <div className="ml-[72px] flex flex-col gap-2">
             <div
               role="progressbar"
-              aria-label="Writing firmware"
+              aria-label={t("firmware.progress.aria")}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={pct}
@@ -125,7 +118,7 @@ export const FirmwareDialog: React.FC<{
             </div>
             <div className="flex justify-between text-xs text-secondary tabular-nums">
               <span>{stage}</span>
-              <span>%{pct}</span>
+              <span>{pct}%</span>
             </div>
           </div>
         )}
@@ -139,9 +132,9 @@ export const FirmwareDialog: React.FC<{
         <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
           {phase === "confirm" && (
             <>
-              <Button onClick={onClose}>Cancel</Button>
+              <Button onClick={onClose}>{t("common.cancel")}</Button>
               <Button variant="primary" className="min-w-[90px]" onClick={start} autoFocus>
-                Update
+                {t("firmware.update")}
               </Button>
             </>
           )}
@@ -149,24 +142,24 @@ export const FirmwareDialog: React.FC<{
             <>
               <span className="mr-auto flex items-center gap-1.5 text-xs text-warning">
                 <AlertTriangle aria-hidden="true" className="h-[13px] w-[13px]" />
-                Don’t unplug the device
+                {t("firmware.dontUnplug")}
               </span>
-              <Button disabled>Cancel</Button>
+              <Button disabled>{t("common.cancel")}</Button>
             </>
           )}
           {phase === "done" && (
             <Button variant="primary" className="min-w-[90px]" onClick={onClose} autoFocus>
-              Close
+              {t("common.close")}
             </Button>
           )}
           {phase === "error" && (
             <>
               <Button className="mr-auto" onClick={copyLog}>
-                {copied ? "Copied" : "Copy log"}
+                {copied ? t("firmware.copied") : t("firmware.copyLog")}
               </Button>
-              <Button onClick={onClose}>Close</Button>
+              <Button onClick={onClose}>{t("common.close")}</Button>
               <Button variant="primary" className="min-w-[90px]" onClick={start} autoFocus>
-                Yeniden dene
+                {t("common.tryAgain")}
               </Button>
             </>
           )}

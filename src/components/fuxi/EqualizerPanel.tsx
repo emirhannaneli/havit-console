@@ -1,6 +1,7 @@
 import React from "react";
 import { RotateCcw } from "lucide-react";
 import { Button, Row, Section, Select } from "../ui";
+import { currentLang, translate, useT, type Lang, type MessageKey } from "../../i18n";
 
 export interface EqBand {
   freq: string;
@@ -31,6 +32,10 @@ export const EQ_PRESETS: Record<string, number[]> = {
   "Valorant Clarity": [1, 2, 3, 1, 0, 3, 6, 7, 5, 3],
 };
 
+/** Display label for a preset id ("Custom" for anything not in EQ_PRESETS). */
+export const eqPresetLabel = (name: string, lang: Lang = currentLang()) =>
+  name in EQ_PRESETS ? translate(lang, `eq.preset.${name}` as MessageKey) : translate(lang, "eq.custom");
+
 interface EqualizerPanelProps {
   bands: number[];
   onChange: (newBands: number[]) => void;
@@ -49,6 +54,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
   preset: activePreset,
   onPresetChange,
 }) => {
+  const { t, lang } = useT();
   const handleBandChange = (index: number, val: number) => {
     const updated = [...bands];
     updated[index] = val;
@@ -71,22 +77,22 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
 
   return (
     <Section
-      title="Equalizer"
+      title={t("eq.title")}
       action={
         <Button variant="plain" onClick={handleReset} className="h-6 px-2 text-xs text-accent-text">
           <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
-          Reset
+          {t("eq.reset")}
         </Button>
       }
-      footer="10 bands · ±20 dB. Editing a band switches the preset to “Custom”."
+      footer={t("eq.footer")}
     >
-      <Row label="Preset" htmlFor="eq-preset">
+      <Row label={t("eq.preset")} htmlFor="eq-preset">
         <Select
           id="eq-preset"
           value={isCustom ? "__custom" : activePreset}
           options={[
-            ...presetNames.map((name) => ({ value: name, label: name })),
-            ...(isCustom ? [{ value: "__custom", label: "Custom", disabled: true }] : []),
+            ...presetNames.map((name) => ({ value: name, label: eqPresetLabel(name, lang) })),
+            ...(isCustom ? [{ value: "__custom", label: t("eq.custom"), disabled: true }] : []),
           ]}
           onChange={(name) => {
             if (name in EQ_PRESETS) handleApplyPreset(name, EQ_PRESETS[name]);
@@ -116,7 +122,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   max={20}
                   step={1}
                   value={val}
-                  aria-label={`${freq} gain`}
+                  aria-label={t("eq.band", { freq })}
                   aria-valuetext={`${val} dB`}
                   onChange={(e) => handleBandChange(idx, Number(e.target.value))}
                   className="h-40 w-6"

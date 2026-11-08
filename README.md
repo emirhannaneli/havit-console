@@ -1,6 +1,8 @@
-# Havit Console
-
 <div align="center">
+
+<img src="src-tauri/icons/icon.png" width="112" height="112" alt="Havit Console icon: a slanted orange H on a dark squircle">
+
+# Havit Console
 
 **A single, lightweight, open-source control center for Havit gaming peripherals.**
 

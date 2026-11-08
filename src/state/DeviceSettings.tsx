@@ -17,6 +17,8 @@ import {
   setFuxiSpeaker,
 } from "../api";
 import { lightingModeName } from "../components/kb884l/LightingPanel";
+import { eqPresetLabel } from "../components/fuxi/EqualizerPanel";
+import { tr$ } from "../i18n";
 
 /**
  * Device settings shared by the device pages and the profiles page.
@@ -117,18 +119,18 @@ const hex = (c: Kb884lLightingConfig) =>
 /** One-line summary for profile lists. */
 export function describeProfile(profile: SavedProfile): string {
   const data = parseProfileData(profile);
-  if (!data) return "No settings (old format)";
+  if (!data) return tr$("state.noSettings");
   if (data.kind === "kb884l") {
     const l = data.lighting;
-    const color = l.mode === 0 ? null : l.random_color ? "random colors" : hex(l);
-    return [lightingModeName(l.mode), color, `brightness ${l.brightness}`].filter(Boolean).join(" · ");
+    const color = l.mode === 0 ? null : l.random_color ? tr$("state.randomColors") : hex(l);
+    return [lightingModeName(l.mode), color, tr$("state.brightness", { n: l.brightness })].filter(Boolean).join(" · ");
   }
   const { dsp, audio } = data;
   return [
-    `EQ ${dsp.preset}`,
-    dsp.surround71 ? "7.1 on" : "7.1 off",
-    `volume ${audio.speaker_volume}%`,
-    `mic ${audio.mic_volume}%`,
+    tr$("state.eq", { preset: eqPresetLabel(dsp.preset) }),
+    dsp.surround71 ? tr$("state.surroundOn") : tr$("state.surroundOff"),
+    tr$("state.volume", { pct: audio.speaker_volume }),
+    tr$("state.mic", { pct: audio.mic_volume }),
   ].join(" · ");
 }
 
@@ -199,7 +201,7 @@ export const DeviceSettingsProvider: React.FC<{ children: React.ReactNode }> = (
   const applyProfile = useCallback(
     async (profile: SavedProfile): Promise<string> => {
       const data = parseProfileData(profile);
-      if (!data) throw new Error("This profile uses an old format and holds no settings.");
+      if (!data) throw new Error(tr$("state.oldFormat"));
       if (data.kind === "kb884l") {
         // Update the UI first so the page reflects the profile even if the write fails.
         setLighting(data.lighting);
@@ -208,19 +210,19 @@ export const DeviceSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         setLightingSource("app");
         await applyKb884lSettings(data.settings);
         setSettingsSource("app");
-        return "Profile applied to the keyboard.";
+        return tr$("state.appliedKeyboard");
       }
       setDsp(data.dsp);
       const st = await fetchFuxiStatus();
       if (!st.speaker_found && !st.mic_found) {
-        throw new Error("Headset audio device not found; only equalizer and effect settings were loaded.");
+        throw new Error(tr$("state.noAudio"));
       }
       if (st.speaker_found) {
         await setFuxiSpeaker(data.audio.speaker_volume, st.speaker_muted);
         await setFuxiBalance(data.audio.left_balance, data.audio.right_balance);
       }
       if (st.mic_found) await setFuxiMic(data.audio.mic_volume, st.mic_muted);
-      return "Profile applied to the headset.";
+      return tr$("state.appliedHeadset");
     },
     [setDsp]
   );

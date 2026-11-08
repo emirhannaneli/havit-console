@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { KeyDef, Kb884lLightingConfig, Kb884lPhysicalLayout } from "../../types";
+import { useT } from "../../i18n";
 
 interface KeyboardSvgLayoutProps {
   layout: Kb884lPhysicalLayout;
@@ -88,6 +89,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
   onKeySelect,
   selectedKey,
 }) => {
+  const { t } = useT();
   const [clockString, setClockString] = useState("");
 
   useEffect(() => {
@@ -112,7 +114,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
         viewBox={`0 0 ${width} ${height}`}
         className="block w-full min-w-[640px] select-none"
         role="group"
-        aria-label="Keyboard layout"
+        aria-label={t("keyboard.layout")}
       >
         <defs>
           <filter id="rgbGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
@@ -140,7 +142,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
           fontWeight="600"
           style={{ pointerEvents: "none" }}
         >
-          {lighting.mode === 0 ? "Lights off" : `Effect: ${effectName}`}
+          {lighting.mode === 0 ? t("keyboard.lightsOff") : t("keyboard.effectCaption", { effect: effectName })}
         </text>
 
         {/* Mini TFT screen bezel */}
@@ -180,7 +182,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
               key={k.key_index}
               role="button"
               tabIndex={0}
-              aria-label={`${k.label} key`}
+              aria-label={t("keyboard.key", { key: k.label })}
               aria-pressed={isSelected}
               onClick={() => onKeySelect?.(k)}
               onKeyDown={(e) => {
