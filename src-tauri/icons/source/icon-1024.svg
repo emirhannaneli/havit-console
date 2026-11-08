@@ -7,8 +7,8 @@
       <stop offset="1" stop-color="#111113"/>
     </linearGradient>
     <linearGradient id="acc" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFB15C"/>
-      <stop offset="1" stop-color="#FF9230"/>
+      <stop offset="0" stop-color="#FF6B6F"/>
+      <stop offset="1" stop-color="#F63037"/>
     </linearGradient>
     <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
       <feGaussianBlur stdDeviation="26"/>
@@ -17,10 +17,10 @@
   </defs>
   <rect width="1024" height="1024" rx="229" fill="url(#bg)"/>
   <g clip-path="url(#sq)">
-    <polygon points="512,96 880,308 880,716 512,928 144,716 144,308" fill="none" stroke="#FF9230" stroke-opacity="0.16" stroke-width="10"/>
+    <polygon points="512,96 880,308 880,716 512,928 144,716 144,308" fill="none" stroke="#F63037" stroke-opacity="0.16" stroke-width="10"/>
     <polygon points="-40,1024 1064,-80 1064,0 40,1024" fill="#FFFFFF" fill-opacity="0.03"/>
   </g>
-  <g fill="#FF9230" filter="url(#glow)" opacity="0.75">
+  <g fill="#F63037" filter="url(#glow)" opacity="0.75">
     <polygon points="322,282 446,282 404,742 280,742"/>
     <polygon points="578,282 702,282 660,742 536,742"/>
     <polygon points="414,462 648,462 636,562 402,562"/>

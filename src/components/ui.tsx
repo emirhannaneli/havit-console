@@ -118,7 +118,7 @@ export const Switch: React.FC<{
     className={cx(
       "relative flex h-[22px] w-[38px] flex-none items-center rounded-full border-0 p-0.5 transition-colors duration-150 disabled:opacity-50",
       "after:absolute after:-inset-x-1 after:-inset-y-[11px] after:content-['']",
-      checked ? "bg-accent" : "bg-switch-off"
+      checked ? "bg-switch-on" : "bg-switch-off"
     )}
   >
     <span

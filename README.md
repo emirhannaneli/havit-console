@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src-tauri/icons/icon.png" width="112" height="112" alt="Havit Console icon: a slanted orange H on a dark squircle">
+<img src="src-tauri/icons/icon.png" width="112" height="112" alt="Havit Console icon: a slanted red H on a dark squircle">
 
 # Havit Console
 

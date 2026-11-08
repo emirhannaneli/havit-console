@@ -18,6 +18,7 @@
   --segment: #e3e3e6;
   --segment-on: #ffffff;
   --switch-off: #d1d1d6;
+  --switch-on: #34c759;
   --label: #1d1d1f;
   --secondary: #6e6e73;
   --tertiary: #8e8e93;
@@ -47,6 +48,7 @@
     --segment: #1a1a1a;
     --segment-on: #636366;
     --switch-off: #5a5a5a;
+    --switch-on: #30d158;
     --label: #e6e6e6;
     --secondary: #9a9a9a;
     --tertiary: #7a7a7a;
@@ -78,6 +80,7 @@
   --color-segment: var(--segment);
   --color-segment-on: var(--segment-on);
   --color-switch-off: var(--switch-off);
+  --color-switch-on: var(--switch-on);
   --color-label: var(--label);
   --color-secondary: var(--secondary);
   --color-tertiary: var(--tertiary);

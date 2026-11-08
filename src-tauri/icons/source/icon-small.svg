@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <!-- 24–48 px variant: no glow or hexagon, thicker bars, one notch. -->
   <rect width="1024" height="1024" rx="229" fill="#1A1A1C"/>
-  <g fill="#FF9230">
+  <g fill="#F63037">
     <polygon points="306,262 456,262 410,762 260,762"/>
     <polygon points="568,262 718,262 672,762 522,762"/>
     <polygon points="408,452 652,452 638,572 394,572"/>
