@@ -12,7 +12,10 @@ name: Release
 #   4. The `build` matrix compiles Windows (NSIS), macOS (universal .app/.dmg) and Linux
 #      (AppImage/.deb), signs the updater bundles and uploads them; tauri-action merges
 #      every platform into one `latest.json`.
-#   5. `publish` clears the pre-release flag and marks the release as latest. Installed apps pick it up from
+#   5. `sign-windows` (only once SignPath is configured) sends the NSIS installer to
+#      SignPath for Authenticode signing, re-signs it for the updater and replaces the
+#      installer, its .sig and the Windows entries of `latest.json` on the release.
+#   6. `publish` clears the pre-release flag and marks the release as latest. Installed apps pick it up from
 #      https://github.com/emirhannaneli/havit-console/releases/latest/download/latest.json
 #
 # Third-party actions are pinned to commit SHAs (the comment is the tag they came from);
@@ -20,6 +23,11 @@ name: Release
 # Required repository secrets:
 #   TAURI_SIGNING_PRIVATE_KEY          contents of ~/.tauri/havit-console.key
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD key password (empty string if the key has none)
+# Windows code signing (SignPath Foundation; the job is skipped until the variable is set):
+#   secret   SIGNPATH_API_TOKEN            API token of the SignPath CI user
+#   variable SIGNPATH_ORGANIZATION_ID      SignPath organization id
+#   variable SIGNPATH_PROJECT_SLUG         optional, defaults to havit-console
+#   variable SIGNPATH_SIGNING_POLICY_SLUG  optional, defaults to release-signing
 
 on:
   push:
@@ -104,8 +112,69 @@ jobs:
           # The bundler downloads NSIS from GitHub at build time; that download fails now and then.
           retryAttempts: 3
 
-  publish:
+  sign-windows:
     needs: [release-please, build]
+    if: vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download the unsigned installer
+        run: gh release download "$TAG" --pattern '*-setup.exe' --dir unsigned
+
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        id: unsigned
+        with:
+          name: windows-installer-unsigned
+          path: unsigned/*-setup.exe
+          if-no-files-found: error
+
+      - uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092 # v3.0
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'havit-console' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          # Foundation releases are approved by hand, so allow time for that.
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed
+
+      # The updater checks a minisign signature over the exact installer bytes, so the
+      # Authenticode-signed file needs a new .sig and new latest.json entries.
+      - name: Replace the installer and update latest.json
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          exe=$(ls signed/*-setup.exe)
+          name=$(basename "$exe")
+          npx tauri signer sign "$exe"
+          gh release upload "$TAG" "$exe" "$exe.sig" --clobber
+          url=$(gh api "repos/${{ github.repository }}/releases/tags/$TAG"             --jq ".assets[] | select(.name == \"$name\") | .url")
+          test -n "$url"
+          gh release download "$TAG" --pattern latest.json --dir manifest
+          jq --arg sig "$(cat "$exe.sig")" --arg url "$url"             '.platforms |= with_entries(if (.key | startswith("windows")) then .value.signature = $sig | .value.url = $url else . end)'             manifest/latest.json > latest.json
+          gh release upload "$TAG" latest.json --clobber
+
+  publish:
+    needs: [release-please, build, sign-windows]
+    # Runs after signing, or right after the builds while signing is not configured.
+    if: ${{ !cancelled() && needs.build.result == 'success' && needs.sign-windows.result != 'failure' }}
     runs-on: ubuntu-latest
     steps:
       - run: gh release edit "${{ needs.release-please.outputs.tag_name }}" --repo "${{ github.repository }}" --prerelease=false --latest
