@@ -1,7 +1,7 @@
 {
   "name": "havit-console",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Open-source unified hardware configuration console for Havit peripherals",
   "type": "module",
   "scripts": {
