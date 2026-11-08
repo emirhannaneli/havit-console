@@ -109,43 +109,52 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
   const brightness = 0.25 + Math.min(5, lighting.brightness) * 0.15; // 0.25..1
 
   return (
-    <div className="overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="block w-full min-w-[640px] select-none"
-        role="group"
-        aria-label={t("keyboard.layout")}
-      >
-        <defs>
-          <filter id="rgbGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
+    <div className="flex flex-col gap-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-label">{t("keyboard.layout")}</span>
+          {selectedKey && (
+            <span className="rounded bg-fill px-2 py-0.5 text-[11px] font-medium text-accent-text">
+              {t("keyboard.key", { key: selectedKey.label })}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 rounded-full border border-border/80 bg-fill/50 px-2.5 py-0.5 text-[11px] font-medium text-label">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+          <span>
+            {lighting.mode === 0
+              ? t("keyboard.lightsOff")
+              : t("keyboard.effectCaption", { effect: effectName })}
+          </span>
+        </div>
+      </div>
 
-        {/* Chassis */}
-        <rect
-          x="4"
-          y="6"
-          width={width - 8}
-          height={height - 12}
-          rx="14"
-          className="fill-window stroke-separator"
-          strokeWidth="2"
-        />
-        <text
-          x={width - 18}
-          y={height - 14}
-          textAnchor="end"
-          className="fill-secondary"
-          fontSize="10"
-          fontWeight="600"
-          style={{ pointerEvents: "none" }}
+      <div className="overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="block w-full min-w-[640px] select-none"
+          role="group"
+          aria-label={t("keyboard.layout")}
         >
-          {lighting.mode === 0 ? t("keyboard.lightsOff") : t("keyboard.effectCaption", { effect: effectName })}
-        </text>
+          <defs>
+            <filter id="rgbGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
 
-        {/* Mini TFT screen bezel */}
+          {/* Chassis */}
+          <rect
+            x="4"
+            y="6"
+            width={width - 8}
+            height={height - 12}
+            rx="14"
+            className="fill-window stroke-separator"
+            strokeWidth="2"
+          />
+
+          {/* Mini TFT screen bezel */}
         <rect
           x={layout.screen.x - 4}
           y={layout.screen.y - 4}
@@ -235,5 +244,6 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
         })}
       </svg>
     </div>
+  </div>
   );
 };

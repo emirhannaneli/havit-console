@@ -196,7 +196,8 @@ export default function App() {
 
           <main className="flex-1 overflow-y-auto px-4 pt-6 pb-10 sm:px-8">
             <div
-              className={`mx-auto flex flex-col gap-6 ${view === "diagnostics" ? "max-w-[1040px]" : "max-w-[880px]"}`}
+              key={view}
+              className={`page-enter mx-auto flex flex-col gap-6 ${view === "diagnostics" ? "max-w-[1040px]" : "max-w-[880px]"}`}
             >
               {view === "devices" && (
                 <DevicesView
