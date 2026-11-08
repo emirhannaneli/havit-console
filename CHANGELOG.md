@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/emirhannaneli/havit-console/compare/v0.3.0...v0.4.0) (2026-11-08)
+
+
+### Features
+
+* **headset:** add connection mode and battery status bar ([77d3641](https://github.com/emirhannaneli/havit-console/commit/77d36419b7e67987f7de07d1285cb27607488ed3))
+
 ## [0.3.0](https://github.com/emirhannaneli/havit-console/compare/v0.2.0...v0.3.0) (2026-11-08)
 
 
