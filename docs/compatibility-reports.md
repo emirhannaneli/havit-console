@@ -46,8 +46,9 @@ npx wrangler secret put GITHUB_TOKEN           # fine-grained PAT, this repo onl
 npx wrangler deploy                            # prints https://havit-console-reports.<account>.workers.dev
 ```
 
-If the printed hostname differs from `REPORT_ENDPOINT` in `src/telemetry.ts`, update the
-constant and release a new version.
+The relay runs on the custom domain `hc-reports.emirman.dev` (`routes` in `wrangler.toml`)
+because several Turkish ISPs block `*.workers.dev` at DNS level. If it changes, update
+`REPORT_ENDPOINT` in `src/telemetry.ts` and release a new version.
 
 Create the token at GitHub → Settings → Developer settings → Fine-grained tokens:
 resource owner `emirhannaneli`, repository access **only** `havit-console`, repository

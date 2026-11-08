@@ -2,6 +2,12 @@ name = "havit-console-reports"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
+# Custom domain: several Turkish ISPs block *.workers.dev at DNS level, so the app uses
+# this hostname. The zone (emirman.dev) must be on the same Cloudflare account; the DNS
+# record and certificate are created on deploy.
+routes = [{ pattern = "hc-reports.emirman.dev", custom_domain = true }]
+workers_dev = false
+
 # KV namespace for rate limits and fingerprint → issue mapping.
 # Create it once: `npx wrangler kv namespace create STATE`, then paste the id below.
 [[kv_namespaces]]
