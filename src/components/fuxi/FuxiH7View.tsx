@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import type { FuxiAudioEndpointStatus } from "../../types";
 import { AudioControls } from "./AudioControls";
+import { ProfileQuickBar } from "../profiles/ProfileQuickBar";
+import { useDeviceSettings } from "../../state/DeviceSettings";
 import { EqualizerPanel } from "./EqualizerPanel";
-import { SurroundDspPanel } from "./SurroundDspPanel";
+import { MicrophonePanel } from "./MicrophonePanel";
+import { Notice } from "../ui";
 import {
   fetchFuxiStatus,
   setFuxiSpeaker,
@@ -28,22 +31,21 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
     mic_muted: false,
   });
 
-  // EQ Bands state
-  const [eqBands, setEqBands] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  const [preamp, setPreamp] = useState(0);
+  // EQ, surround and mic processing are host-side; shared with the profiles page.
+  const { dsp, setDsp } = useDeviceSettings();
 
-  // DSP Surround & Mic states
-  const [surround71, setSurround71] = useState(true);
-  const [encEnabled, setEncEnabled] = useState(true);
-  const [sidetoneEnabled, setSidetoneEnabled] = useState(false);
-  const [roomSize, setRoomSize] = useState<"small" | "medium" | "large">("medium");
-
-  useEffect(() => {
+  const refreshStatus = () =>
     fetchFuxiStatus().then(setAudioStatus).catch(console.error);
+  useEffect(() => {
+    refreshStatus();
   }, []);
 
   const handleSpeakerChange = async (vol: number, muted: boolean) => {
-    setAudioStatus((prev) => ({ ...prev, speaker_volume: vol, speaker_muted: muted }));
+    setAudioStatus((prev) => ({
+      ...prev,
+      speaker_volume: vol,
+      speaker_muted: muted,
+    }));
     try {
       await setFuxiSpeaker(vol, muted);
     } catch (e) {
@@ -52,7 +54,11 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
   };
 
   const handleBalanceChange = async (left: number, right: number) => {
-    setAudioStatus((prev) => ({ ...prev, left_balance: left, right_balance: right }));
+    setAudioStatus((prev) => ({
+      ...prev,
+      left_balance: left,
+      right_balance: right,
+    }));
     try {
       await setFuxiBalance(left, right);
     } catch (e) {
@@ -70,43 +76,47 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* Disconnected warning banner */}
+    <>
       {!connected && (
-        <div className="bg-amber-950/30 border border-amber-800/40 rounded-xl p-3 flex items-center justify-between text-xs text-amber-200">
-          <span>
-            ⚠️ Fuxi-H7 kulaklık USB dongle'ı veya kablosu algılanamadı. Arayüz sanal test modunda çalışıyor.
-          </span>
-        </div>
+        <Notice tone="warning" title="Fuxi-H7 algılanamadı">
+          Test modundasın. USB alıcısını ya da kabloyu takıp “Cihazları tara”ya
+          bas.
+        </Notice>
       )}
 
-      {/* 1. Master Audio & Mic Controls */}
+      <ProfileQuickBar
+        device="fuxi-h7"
+        connected={connected}
+        onApplied={refreshStatus}
+      />
+
+      <EqualizerPanel
+        bands={dsp.bands}
+        onChange={(bands) => setDsp({ bands })}
+        preamp={dsp.preamp}
+        onPreampChange={(preamp) => setDsp({ preamp })}
+        preset={dsp.preset}
+        onPresetChange={(preset) => setDsp({ preset })}
+      />
+
       <AudioControls
         status={audioStatus}
         onVolumeChange={handleSpeakerChange}
         onBalanceChange={handleBalanceChange}
+        surround71={dsp.surround71}
+        onSurroundChange={(surround71) => setDsp({ surround71 })}
+        roomSize={dsp.roomSize}
+        onRoomSizeChange={(roomSize) => setDsp({ roomSize })}
+      />
+
+      <MicrophonePanel
+        status={audioStatus}
         onMicChange={handleMicChange}
+        encEnabled={dsp.enc}
+        onEncChange={(enc) => setDsp({ enc })}
+        sidetoneEnabled={dsp.sidetone}
+        onSidetoneChange={(sidetone) => setDsp({ sidetone })}
       />
-
-      {/* 2. 10-Band Graphic Equalizer */}
-      <EqualizerPanel
-        bands={eqBands}
-        onChange={setEqBands}
-        preamp={preamp}
-        onPreampChange={setPreamp}
-      />
-
-      {/* 3. 7.1 Surround & DSP Mic Settings */}
-      <SurroundDspPanel
-        surround71={surround71}
-        onSurroundChange={setSurround71}
-        encEnabled={encEnabled}
-        onEncChange={setEncEnabled}
-        sidetoneEnabled={sidetoneEnabled}
-        onSidetoneChange={setSidetoneEnabled}
-        roomSize={roomSize}
-        onRoomSizeChange={setRoomSize}
-      />
-    </div>
+    </>
   );
 };

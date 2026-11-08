@@ -11,15 +11,21 @@ use devices::fuxi_h7::windows_audio::{
     FuxiAudioEndpointStatus,
 };
 use devices::kb884l::driver::{
-    apply_lighting, apply_settings, sync_keyboard_time, upload_lcd_animation,
+    apply_lighting, apply_settings, sync_keyboard_time, upload_lcd_frames,
     Kb884lLightingConfig, Kb884lSettingsConfig,
 };
-use devices::kb884l::image_codec::{frames_to_previews, load_media_frames, LcdFramePreview};
+use devices::kb884l::state::{
+    load_screen, load_state, remember_lighting, remember_screen, remember_settings, Kb884lScreenState,
+    Kb884lState,
+};
+use packet_log::record_packet;
+use devices::kb884l::image_codec::{frames_to_previews, load_media_frames, LcdFit, LcdFramePreview};
 use devices::kb884l::layout::{get_kb884l_layout, Kb884lPhysicalLayout};
 use packet_log::{clear_logs, get_logs, PacketLogEntry};
 use profiles::{delete_profile, list_profiles, save_profile, SavedProfile};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 
 // --- Device Discovery ---
 
@@ -35,30 +41,95 @@ fn get_kb884l_layout_data() -> Result<Kb884lPhysicalLayout, String> {
     Ok(get_kb884l_layout())
 }
 
-#[tauri::command]
-fn kb884l_sync_time(slot_id: Option<u8>) -> Result<String, String> {
-    sync_keyboard_time(slot_id.unwrap_or(0))
+/// Serializes KB884L HID transactions: commands now run off the UI thread, and two
+/// interleaved transactions (e.g. lighting during an LCD upload) would corrupt both.
+static KB884L_IO: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Runs slow work (HID I/O, image decoding) on a worker thread so the window stays responsive.
+async fn off_ui_thread<T: Send + 'static>(
+    hid: bool,
+    work: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = hid.then(|| KB884L_IO.lock().unwrap_or_else(|p| p.into_inner()));
+        work()
+    })
+    .await
+    .map_err(|e| format!("Arka plan işi başarısız oldu: {e}"))?
 }
 
 #[tauri::command]
-fn kb884l_apply_lighting_cfg(cfg: Kb884lLightingConfig) -> Result<String, String> {
-    apply_lighting(&cfg)
+async fn kb884l_sync_time(slot_id: Option<u8>) -> Result<String, String> {
+    off_ui_thread(true, move || sync_keyboard_time(slot_id.unwrap_or(0))).await
 }
 
 #[tauri::command]
-fn kb884l_apply_settings_cfg(cfg: Kb884lSettingsConfig) -> Result<String, String> {
-    apply_settings(&cfg)
+async fn kb884l_apply_lighting_cfg(cfg: Kb884lLightingConfig) -> Result<String, String> {
+    off_ui_thread(true, move || {
+        let msg = apply_lighting(&cfg)?;
+        if let Err(e) = remember_lighting(&cfg) {
+            record_packet("kb884l", "ERR", "state", e, &[]);
+        }
+        Ok(msg)
+    })
+    .await
 }
 
 #[tauri::command]
-fn kb884l_preview_file(file_path: String) -> Result<Vec<LcdFramePreview>, String> {
-    let frames = load_media_frames(&file_path)?;
-    frames_to_previews(&frames)
+fn kb884l_load_state() -> Kb884lState {
+    load_state()
 }
 
 #[tauri::command]
-fn kb884l_upload_media_file(file_path: String, slot_id: Option<u8>) -> Result<String, String> {
-    upload_lcd_animation(&file_path, slot_id.unwrap_or(0))
+async fn kb884l_apply_settings_cfg(cfg: Kb884lSettingsConfig) -> Result<String, String> {
+    off_ui_thread(true, move || {
+        let msg = apply_settings(&cfg)?;
+        if let Err(e) = remember_settings(&cfg) {
+            record_packet("kb884l", "ERR", "state", e, &[]);
+        }
+        Ok(msg)
+    })
+    .await
+}
+
+#[tauri::command]
+async fn kb884l_preview_file(
+    file_path: String,
+    fit: Option<LcdFit>,
+) -> Result<Vec<LcdFramePreview>, String> {
+    off_ui_thread(false, move || {
+        let frames = load_media_frames(&file_path, fit.unwrap_or_default())?;
+        frames_to_previews(&frames)
+    })
+    .await
+}
+
+#[tauri::command]
+async fn kb884l_upload_media_file(
+    file_path: String,
+    slot_id: Option<u8>,
+    fit: Option<LcdFit>,
+) -> Result<String, String> {
+    let slot = slot_id.unwrap_or(0);
+    // Decode outside the HID lock; only the transfer itself needs exclusive access.
+    let frames = off_ui_thread(false, move || load_media_frames(&file_path, fit.unwrap_or_default())).await?;
+    let frames = std::sync::Arc::new(frames);
+    let upload = frames.clone();
+    let msg = off_ui_thread(true, move || upload_lcd_frames(&upload, slot)).await?;
+    off_ui_thread(false, move || {
+        if let Err(e) = remember_screen(&frames, slot) {
+            record_packet("kb884l", "ERR", "state", e, &[]);
+        }
+        Ok(())
+    })
+    .await?;
+    Ok(msg)
+}
+
+/// Last known screen animation (the LCD channel can't be read back).
+#[tauri::command]
+async fn kb884l_load_screen() -> Result<Option<Kb884lScreenState>, String> {
+    off_ui_thread(false, load_screen).await
 }
 
 #[tauri::command]
@@ -139,17 +210,76 @@ fn packet_log_clear() -> Result<(), String> {
     Ok(())
 }
 
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+/// Tray icon with a show/quit menu. Closing the window hides it here instead of exiting,
+/// so the device poll and the headset controls stay reachable from the tray.
+fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
+    let show = MenuItem::with_id(app, "show", "Havit Console'u Aç", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show, &PredefinedMenuItem::separator(app)?, &quit])?;
+
+    let mut tray = TrayIconBuilder::with_id("main")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .tooltip("Havit Console")
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "show" => show_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .setup(|app| {
+            setup_tray(app)?;
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Keep running in the tray; "Çıkış" in the tray menu exits.
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             get_connected_devices,
             get_kb884l_layout_data,
             kb884l_sync_time,
             kb884l_apply_lighting_cfg,
             kb884l_apply_settings_cfg,
+            kb884l_load_state,
+            kb884l_load_screen,
             kb884l_preview_file,
             kb884l_upload_media_file,
             save_temp_media,

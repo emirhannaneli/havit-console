@@ -84,13 +84,19 @@ mod win_impl {
                     if let Ok(m) = ep.GetMute() {
                         status.speaker_muted = m.as_bool();
                     }
+                    // Channel scalars are absolute; balance is each channel relative to
+                    // the louder one (100 = unattenuated), so it survives master changes.
                     if let Ok(ch_count) = ep.GetChannelCount() {
                         if ch_count >= 2 {
-                            if let Ok(l) = ep.GetChannelVolumeLevelScalar(0) {
-                                status.left_balance = (l * 100.0).round().clamp(0.0, 100.0) as u8;
-                            }
-                            if let Ok(r) = ep.GetChannelVolumeLevelScalar(1) {
-                                status.right_balance = (r * 100.0).round().clamp(0.0, 100.0) as u8;
+                            if let (Ok(l), Ok(r)) = (
+                                ep.GetChannelVolumeLevelScalar(0),
+                                ep.GetChannelVolumeLevelScalar(1),
+                            ) {
+                                let peak = l.max(r);
+                                if peak > 0.0 {
+                                    status.left_balance = (l / peak * 100.0).round().clamp(0.0, 100.0) as u8;
+                                    status.right_balance = (r / peak * 100.0).round().clamp(0.0, 100.0) as u8;
+                                }
                             }
                         }
                     }
@@ -137,9 +143,16 @@ mod win_impl {
                 .map_err(|e| format!("IAudioEndpointVolume failed: {e}"))?;
             let ch_count = ep.GetChannelCount().unwrap_or(0);
             if ch_count >= 2 {
-                ep.SetChannelVolumeLevelScalar(0, (left.min(100) as f32) / 100.0, std::ptr::null())
+                // Scale by the master level: Windows derives master = max(channels), so
+                // writing absolute 0..100 values here would also change the volume.
+                let master = ep
+                    .GetMasterVolumeLevelScalar()
+                    .map_err(|e| format!("GetMasterVolumeLevelScalar failed: {e}"))?;
+                let left = master * (left.min(100) as f32) / 100.0;
+                let right = master * (right.min(100) as f32) / 100.0;
+                ep.SetChannelVolumeLevelScalar(0, left, std::ptr::null())
                     .map_err(|e| format!("SetChannelVolume L failed: {e}"))?;
-                ep.SetChannelVolumeLevelScalar(1, (right.min(100) as f32) / 100.0, std::ptr::null())
+                ep.SetChannelVolumeLevelScalar(1, right, std::ptr::null())
                     .map_err(|e| format!("SetChannelVolume R failed: {e}"))?;
             }
             Ok(())

@@ -1,40 +1,55 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Download, Headphones, Keyboard, Layers, Plus, Trash2, Upload } from "lucide-react";
+import type { DetectedDeviceStatus, SavedProfile } from "../../types";
+import { deleteProfileFromStorage, fetchProfiles, saveProfileToStorage } from "../../api";
 import {
-  Sliders,
-  Plus,
-  Trash2,
-  Download,
-  Upload,
-  Keyboard,
-  Headphones,
-  CheckCircle2,
-  Calendar,
-} from "lucide-react";
-import type { SavedProfile } from "../../types";
+  describeProfile,
+  parseProfileData,
+  useDeviceSettings,
+  type DeviceId,
+} from "../../state/DeviceSettings";
 import {
-  fetchProfiles,
-  saveProfileToStorage,
-  deleteProfileFromStorage,
-} from "../../api";
+  ActionRow,
+  Button,
+  Notice,
+  Row,
+  Section,
+  Segmented,
+  Select,
+  TextField,
+  type StatusMessage,
+} from "../ui";
 
 interface ProfilesViewProps {
-  onApplyProfile?: (profile: SavedProfile) => void;
+  devices: DetectedDeviceStatus[];
 }
 
-export const ProfilesView: React.FC<ProfilesViewProps> = ({ onApplyProfile }) => {
+const DEVICE_LABEL: Record<DeviceId, string> = {
+  kb884l: "KB884L Klavye",
+  "fuxi-h7": "Fuxi-H7 Kulaklık",
+};
+
+const isDeviceId = (v: unknown): v is DeviceId => v === "kb884l" || v === "fuxi-h7";
+
+export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
+  const { captureProfile, applyProfile } = useDeviceSettings();
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
-  const [selectedDeviceFilter, setSelectedDeviceFilter] = useState<string>("all");
-  const [newProfileName, setNewProfileName] = useState("");
-  const [newProfileDevice, setNewProfileDevice] = useState<"kb884l" | "fuxi-h7">("kb884l");
+  const [filter, setFilter] = useState<"all" | DeviceId>("all");
   const [creating, setCreating] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newDevice, setNewDevice] = useState<DeviceId>("kb884l");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusMessage | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   const loadProfiles = async () => {
     try {
-      const list = await fetchProfiles();
-      setProfiles(list);
+      setProfiles(await fetchProfiles());
+      setLoadError(null);
     } catch (err) {
       console.error(err);
+      setLoadError(String(err));
     }
   };
 
@@ -42,247 +57,241 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ onApplyProfile }) =>
     loadProfiles();
   }, []);
 
-  const handleCreateProfile = async (e: React.FormEvent) => {
+  const flash = (m: StatusMessage) => {
+    setStatus(m);
+    if (m.tone === "success") setTimeout(() => setStatus(null), 4000);
+  };
+
+  const connected = (device: string) => devices.find((d) => d.id === device)?.connected ?? false;
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProfileName.trim()) return;
-
-    const id = `${newProfileDevice}_${Date.now()}`;
-    const newProf: SavedProfile = {
-      id,
-      name: newProfileName.trim(),
-      device_id: newProfileDevice,
-      updated_at: new Date().toISOString(),
-      data: {
-        created_via: "havit-console",
-        device: newProfileDevice,
-      },
-    };
-
+    const name = newName.trim();
+    if (!name) return;
     try {
-      await saveProfileToStorage(newProf);
-      setNewProfileName("");
+      await saveProfileToStorage({
+        id: `${newDevice}_${Date.now()}`,
+        name,
+        device_id: newDevice,
+        updated_at: new Date().toISOString(),
+        data: await captureProfile(newDevice),
+      });
+      setNewName("");
       setCreating(false);
-      setStatusMsg("Yeni profil başarıyla kaydedildi.");
-      setTimeout(() => setStatusMsg(null), 3000);
+      flash({ tone: "success", text: `“${name}” kaydedildi.` });
       await loadProfiles();
     } catch (err) {
-      console.error(err);
+      flash({ tone: "error", text: `Profil kaydedilemedi: ${err}` });
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Bu profili silmek istediğinize emin misiniz?")) {
-      try {
-        await deleteProfileFromStorage(id);
-        await loadProfiles();
-      } catch (err) {
-        console.error(err);
-      }
+  const handleApply = async (profile: SavedProfile) => {
+    setBusyId(profile.id);
+    setStatus(null);
+    try {
+      flash({ tone: "success", text: `“${profile.name}”: ${await applyProfile(profile)}` });
+    } catch (err) {
+      flash({ tone: "error", text: `“${profile.name}” uygulanamadı: ${err}` });
+    } finally {
+      setBusyId(null);
     }
   };
 
-  const handleExportJson = (profile: SavedProfile) => {
-    const blob = new Blob([JSON.stringify(profile, null, 2)], {
-      type: "application/json",
-    });
+  const handleDelete = async (profile: SavedProfile) => {
+    if (!confirm(`“${profile.name}” profili kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`)) return;
+    try {
+      await deleteProfileFromStorage(profile.id);
+      await loadProfiles();
+    } catch (err) {
+      flash({ tone: "error", text: `Silinemedi: ${err}` });
+    }
+  };
+
+  const handleExport = (profile: SavedProfile) => {
+    const blob = new Blob([JSON.stringify(profile, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `havit_${profile.device_id}_${profile.id}.json`;
+    a.download = `havit_${profile.device_id}_${profile.name.replace(/[^\p{L}\p{N}_-]+/gu, "_")}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const filtered = profiles.filter((p) =>
-    selectedDeviceFilter === "all" ? true : p.device_id === selectedDeviceFilter
-  );
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const raw = JSON.parse(await file.text()) as Partial<SavedProfile>;
+      if (!isDeviceId(raw.device_id) || typeof raw.name !== "string") {
+        throw new Error("Dosya bir Havit Console profili değil.");
+      }
+      const candidate: SavedProfile = {
+        id: `${raw.device_id}_${Date.now()}`,
+        name: raw.name.trim() || "İçe aktarılan profil",
+        device_id: raw.device_id,
+        updated_at: new Date().toISOString(),
+        data: (raw.data ?? {}) as SavedProfile["data"],
+      };
+      const data = parseProfileData(candidate);
+      if (!data) throw new Error("Dosyada geçerli cihaz ayarı yok.");
+      await saveProfileToStorage({ ...candidate, data });
+      flash({ tone: "success", text: `“${candidate.name}” içe aktarıldı.` });
+      await loadProfiles();
+    } catch (err) {
+      flash({ tone: "error", text: `İçe aktarılamadı: ${err instanceof Error ? err.message : err}` });
+    }
+  };
+
+  const filtered = profiles.filter((p) => filter === "all" || p.device_id === filter);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/90 p-6 rounded-2xl border border-zinc-800 shadow-xl">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <Sliders className="w-5 h-5 text-amber-400" />
-            <h2 className="text-base font-semibold text-zinc-100">
-              YAPILANDIRMA PROFİLLERİ
-            </h2>
-          </div>
-          <p className="text-xs text-zinc-400">
-            Klavye RGB ve aydınlatma şemalarını, kulaklık EQ bantlarını profiller halinde saklayın.
-          </p>
-        </div>
+    <>
+      {loadError && (
+        <Notice tone="error" title="Profiller yüklenemedi">
+          {loadError}
+        </Notice>
+      )}
 
-        <div className="flex items-center gap-3">
-          {/* Device Filter */}
-          <select
-            value={selectedDeviceFilter}
-            onChange={(e) => setSelectedDeviceFilter(e.target.value)}
-            className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-300 focus:outline-none"
-          >
-            <option value="all">Tüm Cihazlar ({profiles.length})</option>
-            <option value="kb884l">Sadece KB884L Klavye</option>
-            <option value="fuxi-h7">Sadece Fuxi-H7 Kulaklık</option>
-          </select>
-
-          <button
-            onClick={() => setCreating(!creating)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-medium shadow-lg shadow-amber-950/40 active:scale-95 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Yeni Profil Ekle</span>
-          </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Segmented
+          label="Cihaza göre filtrele"
+          options={[
+            { id: "all", label: `Tümü (${profiles.length})` },
+            { id: "kb884l", label: "Klavye" },
+            { id: "fuxi-h7", label: "Kulaklık" },
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
+        <div className="flex gap-2">
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImport}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <Button onClick={() => importRef.current?.click()}>
+            <Upload aria-hidden="true" className="h-4 w-4" />
+            İçe aktar…
+          </Button>
+          {!creating && (
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              <Plus aria-hidden="true" className="h-4 w-4" />
+              Yeni profil
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Creation Box */}
       {creating && (
-        <form
-          onSubmit={handleCreateProfile}
-          className="bg-zinc-900/90 p-5 rounded-2xl border border-amber-500/30 shadow-xl space-y-4 animate-fadeIn"
-        >
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-            Yeni Profil Kaydet
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs text-zinc-300">Profil Başlığı</label>
-              <input
-                type="text"
-                placeholder="Örn: Gece CS2 Modu / Sinema EQ"
-                value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500"
+        <form onSubmit={handleCreate}>
+          <Section
+            title="Yeni profil"
+            footer="Seçtiğin cihazın şu anki ayarları (klavyede ışık ve gelişmiş; kulaklıkta ekolayzer, ses, mikrofon) profile kaydedilir."
+          >
+            <Row label="Ad" htmlFor="prof-name">
+              <TextField
+                id="prof-name"
+                placeholder="Örn. Gece oyun"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
                 required
+                autoFocus
+                className="w-[240px] max-w-full"
               />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-zinc-300">Hedef Donanım</label>
-              <select
-                value={newProfileDevice}
-                onChange={(e) =>
-                  setNewProfileDevice(e.target.value as "kb884l" | "fuxi-h7")
-                }
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none"
-              >
-                <option value="kb884l">Havit KB884L Gaming Keyboard</option>
-                <option value="fuxi-h7">Havit Fuxi-H7 Gaming Headset</option>
-              </select>
-            </div>
-
-            <div className="flex items-end gap-2">
-              <button
-                type="submit"
-                className="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs transition-colors"
-              >
-                Diske Kaydet
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                className="py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors"
-              >
-                İptal
-              </button>
-            </div>
-          </div>
+            </Row>
+            <Row label="Cihaz" htmlFor="prof-device">
+              <Select<DeviceId>
+                id="prof-device"
+                value={newDevice}
+                options={[
+                  { value: "kb884l", label: DEVICE_LABEL.kb884l },
+                  { value: "fuxi-h7", label: DEVICE_LABEL["fuxi-h7"] },
+                ]}
+                onChange={setNewDevice}
+                className="w-[240px]"
+              />
+            </Row>
+            <ActionRow>
+              <Button onClick={() => setCreating(false)}>Vazgeç</Button>
+              <Button type="submit" variant="primary" disabled={!newName.trim()}>
+                Kaydet
+              </Button>
+            </ActionRow>
+          </Section>
         </form>
       )}
 
-      {/* Success Notification */}
-      {statusMsg && (
-        <div className="p-3 bg-emerald-950/40 border border-emerald-800/40 rounded-xl flex items-center gap-2 text-xs text-emerald-300">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{statusMsg}</span>
-        </div>
-      )}
+      {status && <Notice tone={status.tone} title={status.text} />}
 
-      {/* Profile Cards Grid */}
-      {filtered.length === 0 ? (
-        <div className="p-12 text-center bg-zinc-900/50 rounded-2xl border border-zinc-800/80 space-y-2">
-          <Sliders className="w-8 h-8 text-zinc-600 mx-auto" />
-          <p className="text-sm font-medium text-zinc-400">
-            Kayıtlı Profil Bulunamadı
-          </p>
-          <p className="text-xs text-zinc-600">
-            Donanım ayarlarınızı hızlıca değiştirmek için yukarıdaki "Yeni Profil Ekle" butonunu kullanın.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((prof) => {
-            const isKb = prof.device_id === "kb884l";
+      <Section
+        title="Kayıtlı profiller"
+        footer="Profiller bu bilgisayarda saklanır. “Uygula” ayarları cihaza yazar; cihaz bağlı değilse yalnızca uygulamadaki değerler değişir."
+      >
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 px-3.5 py-10 text-center">
+            <Layers aria-hidden="true" className="h-7 w-7 text-tertiary" />
+            <span className="font-semibold">Henüz profil yok</span>
+            <span className="text-xs text-secondary">
+              Cihaz sayfasında ayarlarını yap, sonra “Yeni profil” ile kaydet.
+            </span>
+          </div>
+        ) : (
+          filtered.map((prof) => {
+            const Icon = prof.device_id === "kb884l" ? Keyboard : Headphones;
+            const date = new Date(prof.updated_at).toLocaleDateString("tr-TR", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const label = isDeviceId(prof.device_id) ? DEVICE_LABEL[prof.device_id] : prof.device_id;
+            const hasData = parseProfileData(prof) !== null;
             return (
-              <div
-                key={prof.id}
-                className="bg-zinc-900/90 rounded-2xl p-5 border border-zinc-800 hover:border-zinc-700 transition-all flex flex-col justify-between space-y-4 group"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border ${
-                        isKb
-                          ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
-                          : "bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
-                      }`}
-                    >
-                      {isKb ? (
-                        <Keyboard className="w-3.5 h-3.5" />
-                      ) : (
-                        <Headphones className="w-3.5 h-3.5" />
-                      )}
-                      <span>{isKb ? "KB884L Klavye" : "Fuxi-H7 Kulaklık"}</span>
-                    </span>
-
-                    <button
-                      onClick={() => handleDelete(prof.id)}
-                      title="Profili Sil"
-                      className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <h3 className="font-semibold text-sm text-zinc-100 group-hover:text-white">
-                    {prof.name}
-                  </h3>
-
-                  <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>
-                      {new Date(prof.updated_at).toLocaleDateString("tr-TR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-3 border-t border-zinc-800/80">
-                  <button
-                    onClick={() => onApplyProfile?.(prof)}
-                    className="flex-1 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition-colors"
-                  >
-                    Uygula
-                  </button>
-                  <button
-                    onClick={() => handleExportJson(prof)}
-                    title="JSON Dışa Aktar"
-                    className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
+              <div key={prof.id} className="flex min-h-14 flex-wrap items-center gap-3 px-3.5 py-2">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-fill">
+                  <Icon aria-hidden="true" className="h-5 w-5" />
+                </span>
+                <span className="flex min-w-[200px] flex-1 flex-col gap-0.5">
+                  <span className="font-semibold">{prof.name}</span>
+                  <span className="text-xs leading-[15px] text-secondary">
+                    {label} · {describeProfile(prof)} · {date}
+                  </span>
+                </span>
+                <Button
+                  variant="primary"
+                  onClick={() => handleApply(prof)}
+                  disabled={busyId !== null || !hasData}
+                  title={!connected(prof.device_id) ? "Cihaz bağlı değil; yalnızca uygulamadaki ayarlar değişir" : undefined}
+                >
+                  {busyId === prof.id ? "Uygulanıyor…" : "Uygula"}
+                </Button>
+                <Button
+                  aria-label={`${prof.name} profilini dışa aktar`}
+                  title="Dışa aktar"
+                  onClick={() => handleExport(prof)}
+                  className="w-8 px-0"
+                >
+                  <Download aria-hidden="true" className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  aria-label={`${prof.name} profilini sil`}
+                  title="Sil"
+                  onClick={() => handleDelete(prof)}
+                  className="w-8 px-0"
+                >
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
+                </Button>
               </div>
             );
-          })}
-        </div>
-      )}
-    </div>
+          })
+        )}
+      </Section>
+    </>
   );
 };

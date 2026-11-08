@@ -56,13 +56,14 @@ export interface Kb884lPhysicalLayout {
 }
 
 export interface Kb884lLightingConfig {
-  mode: number;
-  brightness: number; // 1..5
-  speed: number;      // 1..5
-  direction: number;  // 0..3
+  mode: number;       // vendor mode id, 0..20
+  brightness: number; // 0..5
+  speed: number;      // 0..5
+  direction: number;  // 0..3, meaning depends on mode
   r: number;
   g: number;
   b: number;
+  random_color: boolean;
 }
 
 export interface Kb884lSettingsConfig {
@@ -70,6 +71,23 @@ export interface Kb884lSettingsConfig {
   debounce_ms: number;
   win_lock: boolean;
   fn_toggle: boolean;
+}
+
+/** Last known keyboard config: from this app's last apply, else the Havit app's database. */
+export interface Kb884lSavedState {
+  lighting: Kb884lLightingConfig | null;
+  settings: Kb884lSettingsConfig | null;
+  lighting_source: "app" | "vendor" | null;
+  settings_source: "app" | "vendor" | null;
+}
+
+/** How an image is placed on the 160×96 screen. */
+export type LcdFit = "fit" | "fill" | "stretch";
+
+export interface Kb884lScreenState {
+  frames: LcdFramePreview[];
+  source: "app" | "vendor";
+  slot: number | null;
 }
 
 export interface LcdFramePreview {
@@ -92,12 +110,45 @@ export interface FuxiAudioEndpointStatus {
   mic_muted: boolean;
 }
 
+export type RoomSize = "small" | "medium" | "large";
+
+/** Host-side headset processing (the dongle stores none of it). */
+export interface HeadsetDsp {
+  bands: number[]; // 10 bands, -20..20 dB
+  preamp: number;
+  preset: string; // EQ preset name, "Özel" when bands were edited
+  surround71: boolean;
+  roomSize: RoomSize;
+  enc: boolean;
+  sidetone: boolean;
+}
+
+export interface KeyboardProfileData {
+  kind: "kb884l";
+  lighting: Kb884lLightingConfig;
+  settings: Kb884lSettingsConfig;
+}
+
+export interface HeadsetProfileData {
+  kind: "fuxi-h7";
+  dsp: HeadsetDsp;
+  audio: {
+    speaker_volume: number;
+    mic_volume: number;
+    left_balance: number;
+    right_balance: number;
+  };
+}
+
+export type ProfileData = KeyboardProfileData | HeadsetProfileData;
+
 export interface SavedProfile {
   id: string;
   name: string;
   device_id: string;
   updated_at: string;
-  data: Record<string, unknown>;
+  /** `ProfileData` for profiles saved by this version; older files may hold anything. */
+  data: ProfileData | Record<string, unknown>;
 }
 
 export interface PacketLogEntry {
@@ -109,4 +160,21 @@ export interface PacketLogEntry {
   summary: string;
   byte_len: number;
   hex_preview: string;
+}
+
+/** A firmware package offered for a connected device. */
+export interface FirmwareUpdate {
+  device_id: string;
+  device_name: string;
+  current_version: string | null;
+  version: string;
+  size_bytes: number;
+  released: string;
+  notes: string[];
+}
+
+export interface FirmwareUpdateCheck {
+  /** False while no firmware update source exists for this build. */
+  supported: boolean;
+  updates: FirmwareUpdate[];
 }

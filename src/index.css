@@ -1,18 +1,204 @@
 @import "tailwindcss";
 
+/*
+ * Semantic color tokens (macOS System Settings style).
+ * Dark is the reference look; light mirrors it with HIG light-appearance values.
+ */
+:root {
+  color-scheme: light dark;
+
+  --window: #f2f2f4;
+  --sidebar: #e8e8ea;
+  --card: #ffffff;
+  --separator: #dcdcdf;
+  --control: #ffffff;
+  --control-border: #c7c7cc;
+  --fill: #e3e3e6;
+  --fill-hover: #ebebed;
+  --segment: #e3e3e6;
+  --segment-on: #ffffff;
+  --switch-off: #d1d1d6;
+  --label: #1d1d1f;
+  --secondary: #6e6e73;
+  --tertiary: #8e8e93;
+  --accent: #ff9230;
+  --accent-text: #b25000;
+  --on-accent: #1a0d06;
+  --success: #248a3d;
+  --success-dot: #30d158;
+  --warning: #a05a00;
+  --danger: #d70015;
+  --focus: #0a64d6;
+  --key: #f5f5f7;
+  --key-on: #e3e3e6;
+  --key-border: #c7c7cc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --window: #1e1e1e;
+    --sidebar: #262626;
+    --card: #2a2a2a;
+    --separator: #3a3a3a;
+    --control: #3a3a3a;
+    --control-border: #4a4a4a;
+    --fill: #3c3c3c;
+    --fill-hover: #333333;
+    --segment: #1a1a1a;
+    --segment-on: #636366;
+    --switch-off: #5a5a5a;
+    --label: #e6e6e6;
+    --secondary: #9a9a9a;
+    --tertiary: #7a7a7a;
+    --accent: #ff9230;
+    --accent-text: #ffb266;
+    --on-accent: #1a0d06;
+    --success: #30d158;
+    --success-dot: #30d158;
+    --warning: #ffd60a;
+    --danger: #ff6961;
+    --focus: #409cff;
+    --key: #333333;
+    --key-on: #4a4a4a;
+    --key-border: #454545;
+  }
+}
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif;
+
+  --color-window: var(--window);
+  --color-sidebar: var(--sidebar);
+  --color-card: var(--card);
+  --color-separator: var(--separator);
+  --color-control: var(--control);
+  --color-control-border: var(--control-border);
+  --color-fill: var(--fill);
+  --color-fill-hover: var(--fill-hover);
+  --color-segment: var(--segment);
+  --color-segment-on: var(--segment-on);
+  --color-switch-off: var(--switch-off);
+  --color-label: var(--label);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-success-dot: var(--success-dot);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-focus: var(--focus);
+  --color-key: var(--key);
+  --color-key-on: var(--key-on);
+  --color-key-border: var(--key-border);
+}
+
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--window);
+    color: var(--label);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  a,
+  input,
+  select {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="tab"],
+  [role="radio"] {
+    cursor: pointer;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  input[type="range"],
+  input[type="radio"],
+  input[type="checkbox"] {
+    accent-color: var(--accent);
+  }
+
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #27272a;
+    background: var(--control-border);
     border-radius: 9999px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #3f3f46;
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* Keyboard lighting preview (KeyboardSvgLayout). 0% is fully lit so the global
+   reduced-motion rule leaves keys at full color instead of dim. */
+@keyframes kb-breath {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.12;
+  }
+}
+@keyframes kb-wave {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45%,
+  70% {
+    opacity: 0.1;
+  }
+}
+@keyframes kb-twinkle {
+  0%,
+  6%,
+  100% {
+    opacity: 1;
+  }
+  10%,
+  96% {
+    opacity: 0.08;
+  }
+}
+@keyframes kb-hue {
+  to {
+    filter: hue-rotate(360deg);
   }
 }

@@ -1,23 +1,30 @@
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Monitor,
-  Clock,
-  Upload,
-  Play,
-  Pause,
-  Film,
-  CheckCircle2,
-  AlertCircle,
-  FileImage,
-} from "lucide-react";
-import type { LcdFramePreview } from "../../types";
+import { FileImage, Pause, Play, Upload } from "lucide-react";
+import type { LcdFit, LcdFramePreview } from "../../types";
+import { ActionRow, Button, Row, Section, Segmented, Select, cx } from "../ui";
 import {
   pickMediaFile,
   previewKb884lMediaFile,
   uploadKb884lMedia,
   syncKb884lClock,
   saveTempMediaFile,
+  loadKb884lScreen,
 } from "../../api";
+
+const FIT_OPTIONS: { id: LcdFit; label: string }[] = [
+  { id: "fit", label: "Sığdır" },
+  { id: "fill", label: "Doldur" },
+  { id: "stretch", label: "Uzat" },
+];
+
+const FIT_HINT: Record<LcdFit, string> = {
+  fit: "Görselin tamamı görünür; oran farklıysa kenarlarda siyah boşluk kalır.",
+  fill: "Ekranı doldurur; taşan kenarlar kırpılır.",
+  stretch: "Ekranı doldurur; görsel en-boy oranı bozularak esnetilir.",
+};
+
+/** What the preview is showing: a file picked now, or the last known screen content. */
+type PreviewSource = "file" | "app" | "vendor" | null;
 
 interface LcdManagerProps {
   onPreviewUpdate: (url: string | null) => void;
@@ -35,6 +42,26 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     null
   );
   const [clockSyncing, setClockSyncing] = useState(false);
+  const [fit, setFit] = useState<LcdFit>("fit");
+  const [previewSource, setPreviewSource] = useState<PreviewSource>(null);
+  const [onScreenSlot, setOnScreenSlot] = useState<number | null>(null);
+  const filePickedRef = useRef(false);
+  /** Increments per preview request so a slow, older result can't replace a newer one. */
+  const previewRequestRef = useRef(0);
+
+  // The screen can't be read back, so show the last known animation until a file is picked.
+  useEffect(() => {
+    loadKb884lScreen()
+      .then((screen) => {
+        // Skip if a file was picked while this was loading.
+        if (!screen || screen.frames.length === 0 || filePickedRef.current) return;
+        setFrames(screen.frames);
+        setPreviewSource(screen.source);
+        setOnScreenSlot(screen.slot);
+        onPreviewUpdate(screen.frames[0].data_url);
+      })
+      .catch((err) => console.error(err));
+  }, [onPreviewUpdate]);
   const animTimerRef = useRef<number | null>(null);
 
   // Play animation frames in preview
@@ -65,25 +92,26 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     }
   };
 
-  const loadFile = async (path: string) => {
+  const loadFile = async (path: string, placement: LcdFit = fit) => {
+    const request = ++previewRequestRef.current;
+    const isLatest = () => request === previewRequestRef.current;
     try {
       setLoadingPreview(true);
       setStatusMsg(null);
       setSelectedFilePath(path);
-      const decodedFrames = await previewKb884lMediaFile(path);
+      filePickedRef.current = true;
+      const decodedFrames = await previewKb884lMediaFile(path, placement);
+      if (!isLatest()) return;
       setFrames(decodedFrames);
+      setPreviewSource("file");
       setActiveFrameIndex(0);
       if (decodedFrames.length > 0) {
         onPreviewUpdate(decodedFrames[0].data_url);
-        setStatusMsg({
-          type: "success",
-          text: `${decodedFrames.length} kare başarıyla 160×96 çözünürlüğe ölçeklendi.`,
-        });
       }
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Önizleme oluşturulamadı: ${err}` });
+      if (isLatest()) setStatusMsg({ type: "error", text: `Önizleme oluşturulamadı: ${err}` });
     } finally {
-      setLoadingPreview(false);
+      if (isLatest()) setLoadingPreview(false);
     }
   };
 
@@ -112,7 +140,10 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     try {
       setUploading(true);
       setStatusMsg(null);
-      const res = await uploadKb884lMedia(selectedFilePath, uploadSlot);
+      const res = await uploadKb884lMedia(selectedFilePath, uploadSlot, fit);
+      setOnScreenSlot(uploadSlot);
+      setPreviewSource("app");
+      setSelectedFilePath(null);
       setStatusMsg({ type: "success", text: res });
     } catch (err) {
       setStatusMsg({ type: "error", text: `Yükleme hatası: ${err}` });
@@ -134,179 +165,138 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     }
   };
 
+  const handleFitChange = (next: LcdFit) => {
+    setFit(next);
+    if (selectedFilePath) void loadFile(selectedFilePath, next);
+  };
+
+  const sourceNote =
+    previewSource === "app"
+      ? `Klavyede olduğu bilinen son görüntü${onScreenSlot !== null ? ` (Yuva ${onScreenSlot + 1})` : ""}. Klavye ekranı geri okunamadığı için bu uygulamadan en son yüklenen gösteriliyor.`
+      : previewSource === "vendor"
+        ? "Havit uygulamasından en son yüklenen görüntü gösteriliyor. Klavye ekranı geri okunamaz; arada değiştirildiyse farklı olabilir."
+        : null;
+
   const currentPreviewDataUrl = frames[activeFrameIndex]?.data_url;
+  const status = statusMsg && { tone: statusMsg.type, text: statusMsg.text };
 
   return (
-    <div className="bg-zinc-900/90 rounded-2xl p-6 border border-zinc-800 shadow-xl space-y-6">
-      {/* Title Bar */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-        <div className="flex items-center gap-2.5">
-          <Monitor className="w-5 h-5 text-rose-500" />
-          <h3 className="font-semibold text-zinc-100 text-sm tracking-wide">
-            160×96 MİNİ TFT EKRAN & GIF YÖNETİCİSİ
-          </h3>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSyncClock}
-            disabled={clockSyncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 border border-zinc-700 transition-all active:scale-95 disabled:opacity-50"
-          >
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{clockSyncing ? "Eşitleniyor..." : "Bilgisayar Saatini Eşitle"}</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Screen Simulation Box */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-zinc-950 rounded-xl border border-zinc-800">
-          <div className="text-xs font-mono text-zinc-500 mb-2 flex items-center justify-between w-full px-2">
-            <span>TFT EKRAN ÖNİZLEMESİ</span>
-            <span className="text-rose-400">160 × 96 RGB565</span>
-          </div>
-
-          {/* Exact ratio screen viewport */}
-          <div className="w-[240px] h-[144px] bg-black rounded-lg border-2 border-zinc-700 flex items-center justify-center overflow-hidden shadow-inner relative group">
-            {currentPreviewDataUrl ? (
-              <img
-                src={currentPreviewDataUrl}
-                alt="Ekran Önizlemesi"
-                className="w-full h-full object-contain pixelated"
-              />
-            ) : (
-              <div className="flex flex-col items-center text-zinc-600 gap-1.5">
-                <FileImage className="w-8 h-8 opacity-40" />
-                <span className="text-[11px]">Medya Seçilmedi</span>
-              </div>
-            )}
-
-            {/* Play/Pause overlay */}
-            {frames.length > 1 && (
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-              >
-                {isPlaying ? (
-                  <Pause className="w-8 h-8 text-white drop-shadow" />
-                ) : (
-                  <Play className="w-8 h-8 text-white drop-shadow ml-1" />
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Frame indicator */}
-          {frames.length > 0 && (
-            <div className="mt-3 flex items-center gap-2 text-xs font-mono text-zinc-400">
-              <Film className="w-3.5 h-3.5 text-rose-400" />
-              <span>
-                Kare: {activeFrameIndex + 1} / {frames.length}
-              </span>
-              <span>•</span>
-              <span>{frames[activeFrameIndex]?.delay_ms} ms</span>
+    <>
+      <Section
+        title="Ekran görüntüsü"
+        footer={sourceNote ?? "GIF, PNG, JPG ve WEBP desteklenir. Ekran 160×96 piksel ve 65 bin renk gösterir; önizleme klavyede görüneceği gibidir."}
+      >
+        <div className="flex flex-wrap items-stretch gap-4 p-3.5">
+          <div className="flex flex-none flex-col items-center gap-2">
+            <div className="group relative flex h-[144px] w-[240px] items-center justify-center overflow-hidden rounded-lg border border-control-border bg-black">
+              {currentPreviewDataUrl ? (
+                <img
+                  src={currentPreviewDataUrl}
+                  alt="Ekran önizlemesi"
+                  className="pixelated h-full w-full object-contain"
+                />
+              ) : (
+                <span className="flex flex-col items-center gap-1.5 text-[11px] text-[#9a9a9a]">
+                  <FileImage aria-hidden="true" className="h-7 w-7 opacity-60" />
+                  Medya seçilmedi
+                </span>
+              )}
+              {frames.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  aria-label={isPlaying ? "Animasyonu duraklat" : "Animasyonu oynat"}
+                  className="absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-black/60 text-white"
+                >
+                  {isPlaying ? (
+                    <Pause aria-hidden="true" className="h-4 w-4" />
+                  ) : (
+                    <Play aria-hidden="true" className="h-4 w-4" />
+                  )}
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            <span className="text-[11px] text-secondary tabular-nums">
+              {frames.length > 0
+                ? `Kare ${activeFrameIndex + 1} / ${frames.length} · ${frames[activeFrameIndex]?.delay_ms} ms`
+                : "160 × 96 piksel"}
+            </span>
+          </div>
 
-        {/* Right: Drop zone & Controls */}
-        <div className="lg:col-span-7 space-y-4">
-          {/* Dropzone */}
-          <div
+          <button
+            type="button"
+            onClick={handleSelectFile}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
-            onClick={handleSelectFile}
-            className="border-2 border-dashed border-zinc-800 hover:border-rose-500/50 bg-zinc-950/50 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2"
+            disabled={loadingPreview}
+            className="flex min-h-[144px] min-w-[220px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-control-border bg-transparent p-4 text-center text-label hover:border-accent disabled:opacity-60"
           >
-            <Upload className="w-7 h-7 text-zinc-400" />
-            <p className="text-xs text-zinc-300 font-medium">
-              GIF veya Görseli Buraya Sürükleyin ya da <span className="text-rose-400 underline">Göz Atın</span>
-            </p>
-            <p className="text-[11px] text-zinc-500">
-              Desteklenen formatlar: .GIF (animasyonlu), .PNG, .JPG, .WEBP (otomatik 160×96 boyutlandırılır)
-            </p>
-          </div>
-
-          {/* Action Row */}
-          <div className="flex items-center gap-4 pt-2">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-zinc-400 font-medium">Ekran Yuvası:</label>
-              <select
-                value={uploadSlot}
-                onChange={(e) => setUploadSlot(Number(e.target.value))}
-                className="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none"
-              >
-                <option value="0">Yuva 1 (Varsayılan Animasyon)</option>
-                <option value="1">Yuva 2</option>
-                <option value="2">Yuva 3</option>
-              </select>
-            </div>
-
-            <button
-              onClick={handleUploadToKeyboard}
-              disabled={uploading || frames.length === 0}
-              className="flex-1 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-medium text-xs shadow-lg shadow-rose-950/50 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              <span>
-                {uploading
-                  ? "4KB Paketlerle TFT'ye Yükleniyor..."
-                  : "Animasyonu Klavyeye Yükle"}
-              </span>
-            </button>
-          </div>
-
-          {/* Decoded Frames Carousel */}
-          {frames.length > 1 && (
-            <div className="space-y-1.5 pt-2">
-              <label className="text-[11px] font-mono text-zinc-400 uppercase">
-                Ayrıştırılan Kareler ({frames.length})
-              </label>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-                {frames.map((f) => (
-                  <button
-                    key={f.index}
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setActiveFrameIndex(f.index);
-                      onPreviewUpdate(f.data_url);
-                    }}
-                    className={`shrink-0 w-14 h-9 rounded border overflow-hidden transition-all ${
-                      activeFrameIndex === f.index
-                        ? "border-rose-500 ring-2 ring-rose-500/40"
-                        : "border-zinc-800 opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={f.data_url}
-                      alt={`Kare ${f.index}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Feedback message */}
-          {statusMsg && (
-            <div
-              className={`flex items-center gap-2 p-3 rounded-xl text-xs font-medium ${
-                statusMsg.type === "success"
-                  ? "bg-emerald-950/40 border border-emerald-800/40 text-emerald-300"
-                  : "bg-red-950/40 border border-red-800/40 text-red-300"
-              }`}
-            >
-              {statusMsg.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-              )}
-              <span>{statusMsg.text}</span>
-            </div>
-          )}
+            <Upload aria-hidden="true" className="h-6 w-6 text-secondary" />
+            <span className="font-medium">
+              {loadingPreview ? "Önizleme hazırlanıyor…" : "Görseli buraya sürükle ya da seç"}
+            </span>
+            <span className="text-xs text-secondary">Animasyonlu GIF’ler kare kare çözülür</span>
+          </button>
         </div>
-      </div>
-    </div>
+
+        {frames.length > 1 && (
+          <div className="flex flex-col gap-1.5 px-3.5 py-3">
+            <span className="text-xs text-secondary">Kareler ({frames.length})</span>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {frames.map((f) => (
+                <button
+                  key={f.index}
+                  type="button"
+                  aria-label={`Kare ${f.index + 1}`}
+                  aria-pressed={activeFrameIndex === f.index}
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setActiveFrameIndex(f.index);
+                    onPreviewUpdate(f.data_url);
+                  }}
+                  className={cx(
+                    "h-9 w-14 flex-none overflow-hidden rounded border-2 bg-black p-0",
+                    activeFrameIndex === f.index ? "border-accent" : "border-transparent opacity-70 hover:opacity-100"
+                  )}
+                >
+                  <img src={f.data_url} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Row label="Yerleşim" description={FIT_HINT[fit]}>
+          <Segmented label="Görsel yerleşimi" options={FIT_OPTIONS} value={fit} onChange={handleFitChange} />
+        </Row>
+
+        <Row label="Ekran yuvası" htmlFor="lcd-slot">
+          <Select
+            id="lcd-slot"
+            value={uploadSlot}
+            options={[
+              { value: 0, label: "Yuva 1 · varsayılan" },
+              { value: 1, label: "Yuva 2" },
+              { value: 2, label: "Yuva 3" },
+            ]}
+            onChange={setUploadSlot}
+          />
+        </Row>
+
+        <ActionRow status={status}>
+          <Button variant="primary" onClick={handleUploadToKeyboard} disabled={uploading || !selectedFilePath || frames.length === 0}>
+            {uploading ? "Yükleniyor…" : "Klavyeye yükle"}
+          </Button>
+        </ActionRow>
+      </Section>
+
+      <Section title="Saat">
+        <Row label="Bilgisayar saatini eşitle" description="Ekrandaki saati bu bilgisayarın saatine ayarlar">
+          <Button onClick={handleSyncClock} disabled={clockSyncing}>
+            {clockSyncing ? "Eşitleniyor…" : "Eşitle"}
+          </Button>
+        </Row>
+      </Section>
+    </>
   );
 };

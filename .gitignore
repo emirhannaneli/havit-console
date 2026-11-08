@@ -29,3 +29,7 @@ src-tauri/gen/schemas/
 Thumbs.db
 *.log
 graphify-out/
+
+# Local tooling scratch
+.playwright-mcp/
+.patch_*.py

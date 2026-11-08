@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { Sliders, RotateCcw, Sparkles } from "lucide-react";
+import React from "react";
+import { RotateCcw } from "lucide-react";
+import { Button, Row, Section, Select } from "../ui";
 
 export interface EqBand {
   freq: string;
@@ -35,6 +36,9 @@ interface EqualizerPanelProps {
   onChange: (newBands: number[]) => void;
   preamp: number;
   onPreampChange: (preamp: number) => void;
+  /** Active preset name; "Özel" once a band is edited by hand. */
+  preset: string;
+  onPresetChange: (preset: string) => void;
 }
 
 export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
@@ -42,18 +46,18 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
   onChange,
   preamp,
   onPreampChange,
+  preset: activePreset,
+  onPresetChange,
 }) => {
-  const [activePreset, setActivePreset] = useState("Varsayılan");
-
   const handleBandChange = (index: number, val: number) => {
     const updated = [...bands];
     updated[index] = val;
     onChange(updated);
-    setActivePreset("Özel (Custom)");
+    onPresetChange("Özel");
   };
 
   const handleApplyPreset = (name: string, gains: number[]) => {
-    setActivePreset(name);
+    onPresetChange(name);
     onChange([...gains]);
   };
 
@@ -62,147 +66,68 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
     onPreampChange(0);
   };
 
-  // Generate SVG curve points for the spline
-  // Width 600, Height 140. Y=70 is 0 dB. Range: +20 to -20 dB (so 1 dB = 3 px)
-  const curvePoints = bands.map((g, i) => {
-    const x = 30 + i * 60;
-    const y = 70 - g * 2.8;
-    return `${x},${y}`;
-  });
-  const splinePath = `M ${curvePoints.join(" L ")}`;
+  const presetNames = Object.keys(EQ_PRESETS);
+  const isCustom = !presetNames.includes(activePreset);
 
   return (
-    <div className="bg-zinc-900/90 rounded-2xl p-6 border border-zinc-800 shadow-xl space-y-6">
-      {/* Title */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-        <div className="flex items-center gap-2.5">
-          <Sliders className="w-5 h-5 text-cyan-400" />
-          <h3 className="font-semibold text-zinc-100 text-sm tracking-wide">
-            10-BANT GRAFİK EKOLAYZIR (DSP)
-          </h3>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-400 font-mono">
-            Profil: <span className="text-cyan-400 font-semibold">{activePreset}</span>
-          </span>
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs border border-zinc-700 transition-colors"
+    <Section
+      title="Ekolayzer"
+      action={
+        <Button variant="plain" onClick={handleReset} className="h-6 px-2 text-xs text-accent-text">
+          <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
+          Sıfırla
+        </Button>
+      }
+      footer="10 bant · ±20 dB. Bir bandı değiştirince ön ayar “Özel” olur."
+    >
+      <Row label="Ön ayar" htmlFor="eq-preset">
+        <Select
+          id="eq-preset"
+          value={isCustom ? "__custom" : activePreset}
+          options={[
+            ...presetNames.map((name) => ({ value: name, label: name })),
+            ...(isCustom ? [{ value: "__custom", label: "Özel", disabled: true }] : []),
+          ]}
+          onChange={(name) => {
+            if (name in EQ_PRESETS) handleApplyPreset(name, EQ_PRESETS[name]);
+          }}
+          className="min-w-[220px]"
+        />
+      </Row>
+
+      <div className="overflow-x-auto px-3.5 pt-4 pb-3">
+        <div className="flex min-w-[560px] items-stretch gap-1.5">
+          <div
+            aria-hidden="true"
+            className="mt-5 flex h-40 w-8 flex-none flex-col justify-between text-right text-[11px] text-secondary tabular-nums"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Sıfırla</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Visual Curve Graph */}
-      <div className="w-full bg-zinc-950 rounded-xl p-3 border border-zinc-800 relative overflow-hidden">
-        <div className="flex justify-between text-[10px] font-mono text-zinc-600 px-2 select-none">
-          <span>+20 dB</span>
-          <span>0 dB</span>
-          <span>-20 dB</span>
-        </div>
-        <svg viewBox="0 0 600 140" className="w-full h-28 overflow-visible">
-          <defs>
-            <linearGradient id="eqGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Grid lines */}
-          <line x1="0" y1="14" x2="600" y2="14" stroke="#27272a" strokeDasharray="3 3" />
-          <line x1="0" y1="70" x2="600" y2="70" stroke="#3f3f46" strokeWidth="1" />
-          <line x1="0" y1="126" x2="600" y2="126" stroke="#27272a" strokeDasharray="3 3" />
-
-          {/* Area fill */}
-          <path
-            d={`${splinePath} L 570,70 L 30,70 Z`}
-            fill="url(#eqGradient)"
-          />
-
-          {/* Curve line */}
-          <path
-            d={splinePath}
-            fill="none"
-            stroke="#22d3ee"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Node points */}
-          {bands.map((g, i) => {
-            const x = 30 + i * 60;
-            const y = 70 - g * 2.8;
+            <span>+20</span>
+            <span>0</span>
+            <span>−20</span>
+          </div>
+          {EQ_FREQUENCIES.map((freq, idx) => {
+            const val = bands[idx] ?? 0;
             return (
-              <circle
-                key={i}
-                cx={x}
-                cy={y}
-                r="4"
-                fill="#ffffff"
-                stroke="#0891b2"
-                strokeWidth="2"
-              />
-            );
-          })}
-        </svg>
-      </div>
-
-      {/* 10 Vertical Sliders */}
-      <div className="grid grid-cols-10 gap-2 items-end pt-2">
-        {EQ_FREQUENCIES.map((freq, idx) => {
-          const val = bands[idx] ?? 0;
-          return (
-            <div key={freq} className="flex flex-col items-center gap-2 group">
-              <span className="text-[11px] font-mono text-cyan-300 font-semibold h-4">
-                {val > 0 ? `+${val}` : val}
-              </span>
-
-              {/* Vertical slider input container */}
-              <div className="h-40 flex items-center justify-center py-2">
+              <label key={freq} className="flex flex-1 flex-col items-center gap-1.5">
+                <span className="h-3.5 text-[11px] tabular-nums">{val > 0 ? `+${val}` : val}</span>
                 <input
                   type="range"
-                  min="-20"
-                  max="20"
-                  step="1"
+                  min={-20}
+                  max={20}
+                  step={1}
                   value={val}
+                  aria-label={`${freq} kazancı`}
+                  aria-valuetext={`${val} dB`}
                   onChange={(e) => handleBandChange(idx, Number(e.target.value))}
-                  className="w-32 -rotate-90 accent-cyan-400 cursor-pointer"
+                  className="h-40 w-6"
+                  style={{ writingMode: "vertical-lr", direction: "rtl" }}
                 />
-              </div>
-
-              <span className="text-[10px] font-mono text-zinc-400 tracking-tight text-center whitespace-nowrap">
-                {freq}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Stock Presets Buttons */}
-      <div className="space-y-2 pt-4 border-t border-zinc-800">
-        <label className="text-xs font-medium text-zinc-300 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          Hazır Ekolayzır Profilleri
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(EQ_PRESETS).map(([name, gains]) => (
-            <button
-              key={name}
-              onClick={() => handleApplyPreset(name, gains)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activePreset === name
-                  ? "bg-cyan-500 text-zinc-950 font-bold shadow-lg shadow-cyan-950/40"
-                  : "bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800"
-              }`}
-            >
-              {name}
-            </button>
-          ))}
+                <span className="text-[11px] whitespace-nowrap text-secondary">{freq}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </Section>
   );
 };

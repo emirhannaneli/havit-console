@@ -1,93 +1,212 @@
 import { useState, useEffect, useCallback } from "react";
-import type { DetectedDeviceStatus } from "./types";
-import { Navbar, type ActiveTab } from "./components/Navbar";
+import { ChevronLeft, PanelLeft, RefreshCw } from "lucide-react";
+import type {
+  DetectedDeviceStatus,
+  FirmwareUpdate,
+  FirmwareUpdateCheck,
+} from "./types";
+import { Sidebar, type View } from "./components/Sidebar";
+import { DevicesView } from "./components/DevicesView";
 import { Kb884lView } from "./components/kb884l/Kb884lView";
 import { FuxiH7View } from "./components/fuxi/FuxiH7View";
 import { ProfilesView } from "./components/profiles/ProfilesView";
 import { PacketInspectorView } from "./components/diagnostics/PacketInspectorView";
-import { fetchConnectedDevices } from "./api";
-import { Github, ShieldCheck, Heart } from "lucide-react";
+import { AUTO_CHECK_PREF, UpdatesView } from "./components/updates/UpdatesView";
+import { useAppUpdate } from "./components/updates/useAppUpdate";
+import { FirmwareDialog } from "./components/updates/FirmwareDialog";
+import { ONBOARDED_PREF, OnboardingSheet } from "./components/OnboardingSheet";
+import { Button, readPref, StatusDot } from "./components/ui";
+import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
+import { DeviceSettingsProvider } from "./state/DeviceSettings";
+
+const TITLES: Record<View, string> = {
+  devices: "Cihazlar",
+  kb884l: "KB884L Klavye",
+  "fuxi-h7": "Fuxi-H7 Kulaklık",
+  profiles: "Profiller",
+  updates: "Güncellemeler",
+  diagnostics: "Tanılama",
+};
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("kb884l");
+  const [view, setView] = useState<View>("devices");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [devices, setDevices] = useState<DetectedDeviceStatus[]>([]);
   const [loading, setLoading] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [onboarding, setOnboarding] = useState(
+    () => !readPref(ONBOARDED_PREF, false),
+  );
+  const [updateCheck, setUpdateCheck] = useState<FirmwareUpdateCheck | null>(
+    null,
+  );
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [installing, setInstalling] = useState<FirmwareUpdate | null>(null);
+  const appUpdate = useAppUpdate();
+  const checkApp = appUpdate.check;
 
-  const refreshHardware = useCallback(async () => {
-    setLoading(true);
+  const runUpdateCheck = useCallback(async () => {
+    setCheckingUpdates(true);
+    void checkApp();
+    try {
+      setUpdateCheck(await checkFirmwareUpdates());
+      setUpdateError(null);
+      setLastChecked(new Date());
+    } catch (err) {
+      setUpdateError(String(err));
+    } finally {
+      setCheckingUpdates(false);
+    }
+  }, [checkApp]);
+
+  useEffect(() => {
+    if (readPref(AUTO_CHECK_PREF, true)) runUpdateCheck();
+  }, [runUpdateCheck]);
+
+  const updateCount =
+    (updateCheck?.updates.length ?? 0) +
+    (appUpdate.state.phase === "available" ? 1 : 0);
+
+  // `loading` only reflects a scan the user asked for; the background poll stays silent.
+  const refreshHardware = useCallback(async (manual = false) => {
+    if (manual) setLoading(true);
     try {
       const devList = await fetchConnectedDevices();
       setDevices(devList);
+      setScanError(null);
     } catch (err) {
       console.error("Cihaz tarama hatası:", err);
+      setScanError(String(err));
     } finally {
-      setLoading(false);
+      if (manual) setLoading(false);
     }
   }, []);
+
+  const scanNow = useCallback(() => refreshHardware(true), [refreshHardware]);
 
   useEffect(() => {
     refreshHardware();
     // Auto-refresh devices every 5 seconds
-    const interval = setInterval(refreshHardware, 5000);
+    const interval = setInterval(() => refreshHardware(), 5000);
     return () => clearInterval(interval);
   }, [refreshHardware]);
 
   const kb884l = devices.find((d) => d.id === "kb884l");
   const fuxi = devices.find((d) => d.id === "fuxi-h7");
+  const currentDevice =
+    view === "kb884l" ? kb884l : view === "fuxi-h7" ? fuxi : undefined;
+  const isDeviceView = view === "kb884l" || view === "fuxi-h7";
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-rose-500/30 selection:text-rose-200">
-      {/* 1. Top Navigation Bar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        devices={devices}
-        onRefresh={refreshHardware}
-        loading={loading}
-      />
-
-      {/* 2. Main Workspace Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8">
-        {activeTab === "kb884l" && (
-          <Kb884lView connected={kb884l?.connected ?? false} />
+    <DeviceSettingsProvider>
+      <div className="flex h-full bg-window text-label">
+        {sidebarOpen && (
+          <Sidebar
+            view={view}
+            onNavigate={setView}
+            devices={devices}
+            updateCount={updateCount}
+          />
         )}
 
-        {activeTab === "fuxi-h7" && (
-          <FuxiH7View connected={fuxi?.connected ?? false} />
-        )}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-[52px] flex-none items-center gap-2 border-b border-separator bg-sidebar px-4">
+            <Button
+              variant="plain"
+              aria-label={
+                sidebarOpen ? "Kenar çubuğunu gizle" : "Kenar çubuğunu göster"
+              }
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((o) => !o)}
+              className="h-8 w-8 px-0 text-secondary"
+            >
+              <PanelLeft aria-hidden="true" className="h-[18px] w-[18px]" />
+            </Button>
+            {isDeviceView && (
+              <Button
+                variant="plain"
+                aria-label="Geri: Cihazlar"
+                onClick={() => setView("devices")}
+                className="h-8 w-8 px-0 text-secondary"
+              >
+                <ChevronLeft aria-hidden="true" className="h-[18px] w-[18px]" />
+              </Button>
+            )}
+            <h1 className="m-0 ml-1 mr-auto flex min-w-0 items-center gap-2.5 text-[15px] leading-5 font-semibold">
+              <span className="truncate">{TITLES[view]}</span>
+              {isDeviceView && (
+                <span className="flex flex-none items-center gap-1.5 text-xs font-normal text-secondary">
+                  <StatusDot on={currentDevice?.connected ?? false} />
+                  {currentDevice?.connected ? "Bağlı" : "Bağlı değil"}
+                </span>
+              )}
+            </h1>
+            <Button
+              variant="plain"
+              onClick={scanNow}
+              disabled={loading}
+              className="h-8"
+            >
+              <RefreshCw
+                aria-hidden="true"
+                className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
+              />
+              {loading ? "Taranıyor…" : "Cihazları tara"}
+            </Button>
+          </header>
 
-        {activeTab === "profiles" && <ProfilesView />}
-
-        {activeTab === "diagnostics" && <PacketInspectorView />}
-      </main>
-
-      {/* 3. Bottom Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950/80 px-6 py-4 text-xs text-zinc-500 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-rose-500" />
-          <span>
-            Havit Console — Açık kaynaklı ve temiz oda (clean-room) tersine mühendislikle geliştirilmiştir.
-          </span>
+          <main className="flex-1 overflow-y-auto px-4 pt-6 pb-10 sm:px-8">
+            <div
+              className={`mx-auto flex flex-col gap-6 ${view === "diagnostics" ? "max-w-[1040px]" : "max-w-[880px]"}`}
+            >
+              {view === "devices" && (
+                <DevicesView
+                  devices={devices}
+                  loading={loading}
+                  scanError={scanError}
+                  onOpen={setView}
+                  updateCount={updateCount}
+                />
+              )}
+              {view === "kb884l" && (
+                <Kb884lView connected={kb884l?.connected ?? false} />
+              )}
+              {view === "fuxi-h7" && (
+                <FuxiH7View connected={fuxi?.connected ?? false} />
+              )}
+              {view === "profiles" && <ProfilesView devices={devices} />}
+              {view === "updates" && (
+                <UpdatesView
+                  app={appUpdate}
+                  devices={devices}
+                  check={updateCheck}
+                  checking={checkingUpdates}
+                  checkError={updateError}
+                  lastChecked={lastChecked}
+                  onCheck={runUpdateCheck}
+                  onInstall={setInstalling}
+                />
+              )}
+              {view === "diagnostics" && <PacketInspectorView />}
+            </div>
+          </main>
         </div>
-
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            Topluluk için <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" /> ile üretildi
-          </span>
-          <span className="text-zinc-700">•</span>
-          <span className="font-mono text-zinc-400">Tauri v2 + Rust</span>
-          <span className="text-zinc-700">•</span>
-          <a
-            href="https://github.com/morluto/rea"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-zinc-300 transition-colors flex items-center gap-1"
-          >
-            <Github className="w-3.5 h-3.5" />
-            <span>rea toolchain</span>
-          </a>
-        </div>
-      </footer>
-    </div>
+        <OnboardingSheet
+          open={onboarding}
+          devices={devices}
+          scanning={loading}
+          onDone={() => setOnboarding(false)}
+        />
+        <FirmwareDialog
+          update={installing}
+          onClose={() => {
+            setInstalling(null);
+            runUpdateCheck();
+          }}
+        />
+      </div>
+    </DeviceSettingsProvider>
   );
 }

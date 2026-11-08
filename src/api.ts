@@ -1,11 +1,17 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type {
   DetectedDeviceStatus,
+  FirmwareUpdate,
+  FirmwareUpdateCheck,
   FuxiAudioEndpointStatus,
   Kb884lLightingConfig,
   Kb884lPhysicalLayout,
   Kb884lSettingsConfig,
+  Kb884lSavedState,
+  Kb884lScreenState,
+  LcdFit,
   LcdFramePreview,
   PacketLogEntry,
   SavedProfile,
@@ -18,7 +24,7 @@ const mockDevices: DetectedDeviceStatus[] = [
     name: "Havit KB884L RGB TFT Gaming Keyboard",
     category: "keyboard",
     connected: true,
-    connection_type: "USB Wired (HID 0xFF13 + 0xFF68)",
+    connection_type: "USB kablolu",
     vid_hex: "0x05AC",
     pid_hex: "0x024F",
     firmware_version: "1.20",
@@ -42,7 +48,7 @@ const mockDevices: DetectedDeviceStatus[] = [
     name: "Havit Fuxi-H7 Quad-Mode Gaming Headset",
     category: "headset",
     connected: true,
-    connection_type: "2.4GHz Wireless / USB Dongle (0xF100)",
+    connection_type: "2.4 GHz kablosuz alıcı",
     vid_hex: "0x040B",
     pid_hex: "0x0897",
     firmware_version: "0.32",
@@ -184,6 +190,13 @@ export async function applyKb884lLighting(cfg: Kb884lLightingConfig): Promise<st
   return `Simulated: Applied lighting mode ${cfg.mode}`;
 }
 
+export async function loadKb884lState(): Promise<Kb884lSavedState> {
+  if (isTauri()) {
+    return invoke<Kb884lSavedState>("kb884l_load_state");
+  }
+  return { lighting: null, settings: null, lighting_source: null, settings_source: null };
+}
+
 export async function applyKb884lSettings(cfg: Kb884lSettingsConfig): Promise<string> {
   if (isTauri()) {
     return invoke<string>("kb884l_apply_settings_cfg", { cfg });
@@ -191,18 +204,29 @@ export async function applyKb884lSettings(cfg: Kb884lSettingsConfig): Promise<st
   return "Simulated: Applied hardware settings";
 }
 
-export async function previewKb884lMediaFile(filePath: string): Promise<LcdFramePreview[]> {
+export async function previewKb884lMediaFile(
+  filePath: string,
+  fit: LcdFit = "fit"
+): Promise<LcdFramePreview[]> {
   if (isTauri()) {
-    return invoke<LcdFramePreview[]>("kb884l_preview_file", { filePath });
+    return invoke<LcdFramePreview[]>("kb884l_preview_file", { filePath, fit });
   }
   return [];
 }
 
-export async function uploadKb884lMedia(filePath: string, slotId = 0): Promise<string> {
+export async function uploadKb884lMedia(filePath: string, slotId = 0, fit: LcdFit = "fit"): Promise<string> {
   if (isTauri()) {
-    return invoke<string>("kb884l_upload_media_file", { filePath, slotId });
+    return invoke<string>("kb884l_upload_media_file", { filePath, slotId, fit });
   }
   return "Simulated: Uploaded media frames to LCD";
+}
+
+/** Last known screen animation: this app's last upload, else the Havit app's newest one. */
+export async function loadKb884lScreen(): Promise<Kb884lScreenState | null> {
+  if (isTauri()) {
+    return invoke<Kb884lScreenState | null>("kb884l_load_screen");
+  }
+  return null;
 }
 
 export async function saveTempMediaFile(base64Data: string, fileName: string): Promise<string> {
@@ -304,4 +328,53 @@ export async function clearPacketLogs(): Promise<void> {
   if (isTauri()) {
     return invoke("packet_log_clear");
   }
+}
+
+// ---------------------------------------------------------------------------
+// Firmware updates
+// No update source or flashing backend exists yet. In the desktop app the check
+// reports `supported: false`; the browser preview returns a sample package so the
+// update UI can be reviewed.
+// ---------------------------------------------------------------------------
+
+export async function checkFirmwareUpdates(): Promise<FirmwareUpdateCheck> {
+  if (isTauri()) {
+    return { supported: false, updates: [] };
+  }
+  return {
+    supported: true,
+    updates: [
+      {
+        device_id: "kb884l",
+        device_name: "KB884L Klavye",
+        current_version: "önizleme-1.0",
+        version: "önizleme-1.1",
+        size_bytes: 1_200_000,
+        released: "Önizleme",
+        notes: ["Önizleme modu: bu örnek bir sürüm notudur."],
+      },
+    ],
+  };
+}
+
+export async function installFirmwareUpdate(
+  update: FirmwareUpdate,
+  onProgress: (pct: number) => void
+): Promise<void> {
+  if (isTauri()) {
+    throw new Error(`${update.device_name} için firmware yükleme bu sürümde desteklenmiyor.`);
+  }
+  for (let pct = 0; pct <= 100; pct += 4) {
+    onProgress(pct);
+    await new Promise((r) => setTimeout(r, 120));
+  }
+}
+
+/** Opens a link in the system browser (new tab in the browser preview). */
+export async function openExternal(url: string): Promise<void> {
+  if (isTauri()) {
+    await openUrl(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
 }

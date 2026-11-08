@@ -73,13 +73,13 @@ pub fn discover_havit_devices() -> Vec<DetectedDeviceStatus> {
         DetectedDeviceStatus {
             id: "kb884l".to_string(),
             model: "KB884L".to_string(),
-            name: "Havit KB884L RGB TFT Gaming Keyboard".to_string(),
+            name: "Havit KB884L".to_string(),
             category: DeviceCategory::Keyboard,
             connected: kb884l_connected,
             connection_type: if kb884l_connected {
-                "USB Wired (HID 0xFF13 + 0xFF68)".to_string()
+                "USB kablolu".to_string()
             } else {
-                "Disconnected (Preview Mode)".to_string()
+                "Bağlı değil".to_string()
             },
             vid_hex: "0x05AC".to_string(),
             pid_hex: "0x024F".to_string(),
@@ -104,13 +104,13 @@ pub fn discover_havit_devices() -> Vec<DetectedDeviceStatus> {
         DetectedDeviceStatus {
             id: "fuxi-h7".to_string(),
             model: "Fuxi-H7".to_string(),
-            name: "Havit Fuxi-H7 Quad-Mode Gaming Headset".to_string(),
+            name: "Havit Fuxi-H7".to_string(),
             category: DeviceCategory::Headset,
             connected: fuxi_connected,
             connection_type: if fuxi_connected {
-                "2.4GHz Wireless / USB Dongle (0xF100)".to_string()
+                "2.4 GHz kablosuz alıcı".to_string()
             } else {
-                "Disconnected (Preview Mode)".to_string()
+                "Bağlı değil".to_string()
             },
             vid_hex: "0x040B".to_string(),
             pid_hex: "0x0897".to_string(),

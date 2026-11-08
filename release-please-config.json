@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "node",
+  "include-component-in-tag": false,
+  "changelog-sections": [
+    { "type": "feat", "section": "Yenilikler" },
+    { "type": "fix", "section": "Düzeltmeler" },
+    { "type": "perf", "section": "Performans" },
+    { "type": "refactor", "section": "İç değişiklikler", "hidden": true },
+    { "type": "docs", "section": "Belgeler", "hidden": true },
+    { "type": "chore", "section": "Bakım", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "extra-files": [
+        { "type": "json", "path": "src-tauri/tauri.conf.json", "jsonpath": "$.version" },
+        { "type": "toml", "path": "src-tauri/Cargo.toml", "jsonpath": "$.package.version" }
+      ]
+    }
+  }
+}
