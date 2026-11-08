@@ -1,6 +1,21 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { en, type MessageKey } from "./en";
+import { de } from "./de";
+import { es } from "./es";
+import { fr } from "./fr";
+import { id } from "./id";
+import { it } from "./it";
+import { pl } from "./pl";
+import { ptBR } from "./pt-BR";
 import { tr } from "./tr";
+import { vi } from "./vi";
+import { ru } from "./ru";
+import { uk } from "./uk";
+import { hi } from "./hi";
+import { ja } from "./ja";
+import { ko } from "./ko";
+import { zhCN } from "./zh-CN";
+import { zhTW } from "./zh-TW";
 
 /**
  * Minimal i18n: flat string tables, `{name}` interpolation, `_one`/`_other` plurals via
@@ -8,15 +23,49 @@ import { tr } from "./tr";
  * with `currentLang()`. The language is kept in localStorage and applied without a reload.
  */
 
-export type Lang = "en" | "tr";
+export type Lang = "en" | "de" | "es" | "fr" | "id" | "it" | "pl" | "pt-BR" | "tr" | "vi" | "ru" | "uk" | "hi" | "ja" | "ko" | "zh-CN" | "zh-TW";
 
+/** Selectable languages, labelled in their own language. */
 export const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
+  { id: "de", label: "Deutsch" },
+  { id: "es", label: "Español" },
+  { id: "fr", label: "Français" },
+  { id: "id", label: "Bahasa Indonesia" },
+  { id: "it", label: "Italiano" },
+  { id: "pl", label: "Polski" },
+  { id: "pt-BR", label: "Português (Brasil)" },
   { id: "tr", label: "Türkçe" },
+  { id: "vi", label: "Tiếng Việt" },
+  { id: "ru", label: "Русский" },
+  { id: "uk", label: "Українська" },
+  { id: "hi", label: "हिन्दी" },
+  { id: "ja", label: "日本語" },
+  { id: "ko", label: "한국어" },
+  { id: "zh-CN", label: "简体中文" },
+  { id: "zh-TW", label: "繁體中文" },
 ];
 
 const STORAGE_KEY = "havit-console:ui.language";
-const MESSAGES: Record<Lang, Record<MessageKey, string>> = { en, tr };
+const MESSAGES: Record<Lang, Record<MessageKey, string>> = {
+  en,
+  de,
+  es,
+  fr,
+  id,
+  it,
+  pl,
+  "pt-BR": ptBR,
+  tr,
+  vi,
+  ru,
+  uk,
+  hi,
+  ja,
+  ko,
+  "zh-CN": zhCN,
+  "zh-TW": zhTW,
+};
 
 export type Vars = Record<string, string | number>;
 
@@ -29,14 +78,31 @@ export type PluralKey = {
     : never;
 }[MessageKey];
 
+const isLang = (v: unknown): v is Lang => typeof v === "string" && v in MESSAGES;
+
+/** Best supported language for a BCP 47 tag ("zh-Hant-HK" → "zh-TW", "pt-PT" → "pt-BR"). */
+function matchLang(tag: string): Lang | undefined {
+  const lower = tag.toLowerCase();
+  const exact = LANGUAGES.find((l) => l.id.toLowerCase() === lower);
+  if (exact) return exact.id;
+  if (lower.startsWith("zh")) return /hant|-tw|-hk|-mo/.test(lower) ? "zh-TW" : "zh-CN";
+  const base = lower.split("-")[0];
+  return LANGUAGES.find((l) => l.id.toLowerCase().split("-")[0] === base)?.id;
+}
+
 export function detectLang(): Lang {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "tr") return stored;
+    if (isLang(stored)) return stored;
   } catch {
     /* storage unavailable */
   }
-  return navigator.language?.toLowerCase().startsWith("tr") ? "tr" : "en";
+  const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const tag of preferred) {
+    const lang = tag && matchLang(tag);
+    if (lang) return lang;
+  }
+  return "en";
 }
 
 let current: Lang = detectLang();
