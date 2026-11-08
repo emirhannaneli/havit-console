@@ -254,3 +254,37 @@ impl Drop for LongWriteHid {
         }
     }
 }
+
+/// Elsewhere hidapi's write blocks until the report is delivered (hidraw / IOKit), so the
+/// fallback writes through a plain hidapi handle and `timeout_ms` is not enforced.
+#[cfg(not(windows))]
+pub struct LongWriteHid {
+    device: HidDevice,
+}
+
+#[cfg(not(windows))]
+impl LongWriteHid {
+    pub fn open(path: &std::ffi::CStr) -> Result<Self, String> {
+        let api = HidApi::new().map_err(|e| format!("HID init failed: {e}"))?;
+        let device = api
+            .open_path(path)
+            .map_err(|e| format!("Failed to open HID interface for writing: {e}"))?;
+        Ok(Self { device })
+    }
+
+    pub fn write(
+        &self,
+        device_id: &str,
+        channel: &str,
+        summary: &str,
+        buf: &[u8],
+        _timeout_ms: u32,
+    ) -> Result<usize, String> {
+        record_packet(device_id, "TX", channel, summary, buf);
+        self.device.write(buf).map_err(|e| {
+            let msg = format!("HID write failed ({summary}): {e}");
+            record_packet(device_id, "ERR", channel, &msg, &[]);
+            msg
+        })
+    }
+}

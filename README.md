@@ -119,11 +119,26 @@ and submit reports via **Report compatibility…**. Details: [`docs/compatibilit
 
 ## Install
 
-Download `Havit Console_X.Y.Z_x64-setup.exe` from the
-[latest release](https://github.com/emirhannaneli/havit-console/releases/latest). It installs
-per user (no administrator prompt) and updates itself afterwards.
+Download the file for your system from the
+[latest release](https://github.com/emirhannaneli/havit-console/releases/latest). The app
+updates itself afterwards (on Linux, the AppImage build).
 
-Requirements: Windows 10/11 64-bit. WebView2 is installed automatically if missing.
+| System | File | Notes |
+| :--- | :--- | :--- |
+| Windows 10/11 (64-bit) | `Havit Console_X.Y.Z_x64-setup.exe` | Installs per user, no administrator prompt. WebView2 is installed automatically if missing. |
+| macOS 11+ (Apple silicon and Intel) | `Havit Console_X.Y.Z_universal.dmg` | Not notarized yet: on first launch, right-click the app and choose **Open**. |
+| Linux (x86_64) | `.AppImage` or `.deb` | Needs the udev rule below to reach the devices without root. |
+
+Headset volume, balance and microphone controls use Windows CoreAudio and are available on
+Windows only for now. Keyboard features work on every system.
+
+**Linux udev rule.** Save as `/etc/udev/rules.d/70-havit-console.rules`, then run
+`sudo udevadm control --reload-rules && sudo udevadm trigger` and replug the devices:
+
+```
+KERNEL=="hidraw*", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", TAG+="uaccess"
+KERNEL=="hidraw*", ATTRS{idVendor}=="040b", ATTRS{idProduct}=="0897", TAG+="uaccess"
+```
 
 ---
 
@@ -137,7 +152,8 @@ npm run tauri dev      # desktop app with hot reload
 npm run tauri build    # NSIS installer in src-tauri/target/release/bundle/nsis/
 ```
 
-Requirements: Node.js 22, Rust stable (MSVC), Windows. `npm run dev` alone serves a browser
+Requirements: Node.js 22 and Rust stable (MSVC on Windows; on Linux also the
+[Tauri system packages](https://v2.tauri.app/start/prerequisites/) and `libudev-dev`). `npm run dev` alone serves a browser
 preview with mock devices at `http://localhost:1420`.
 
 Versioning and releases follow Conventional Commits and release-please; see
