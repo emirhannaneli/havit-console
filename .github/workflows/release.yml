@@ -5,7 +5,7 @@ name: Release
 #   1. `release-please` reads the commits since the last release, decides the next
 #      version (fix: → patch, feat: → minor, `!`/BREAKING CHANGE → major), and keeps a
 #      release PR up to date that bumps package.json, src-tauri/tauri.conf.json and
-#      src-tauri/Cargo.toml and writes CHANGELOG.md.
+#      src-tauri/Cargo.toml + Cargo.lock and writes CHANGELOG.md.
 #   2. Merging that PR creates the tag `vX.Y.Z` and a GitHub Release.
 #   3. The `build` job then compiles the Windows installer, signs the updater bundle and
 #      uploads it plus `latest.json` to that release. Installed apps pick it up from

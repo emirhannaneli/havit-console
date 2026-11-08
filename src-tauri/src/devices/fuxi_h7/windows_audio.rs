@@ -452,6 +452,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore = "requires a connected Fuxi-H7 headset; run with `cargo test -- --ignored`"]
     fn dump_fuxi_endpoint_properties() {
         let status = query_status();
         println!("QUERY STATUS RESULT: {:?}", status);
