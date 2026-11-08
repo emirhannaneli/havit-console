@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/emirhannaneli/havit-console/compare/v0.4.2...v0.5.0) (2026-11-08)
+
+
+### Features
+
+* **headset:** redesign equalizer with preset segments and custom sliders ([e898b73](https://github.com/emirhannaneli/havit-console/commit/e898b73b5f12fc8eab448ffb18de0348a7529dab))
+* **i18n:** add 15 languages including Chinese and Japanese ([27d0f24](https://github.com/emirhannaneli/havit-console/commit/27d0f2484a50da314f0f8fa47c0c9ab82e6cd50a))
+
+
+### Bug Fixes
+
+* **ci:** sync Cargo.lock version and skip hardware-only test ([bfd5d45](https://github.com/emirhannaneli/havit-console/commit/bfd5d4566b05e3a7b365a267fb8aca7c374e77e7))
+
 ## [0.4.2](https://github.com/emirhannaneli/havit-console/compare/v0.4.1...v0.4.2) (2026-11-08)
 
 
