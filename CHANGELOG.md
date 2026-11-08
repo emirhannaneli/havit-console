@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/emirhannaneli/havit-console/compare/v0.4.0...v0.4.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **telemetry:** default compatibility reports to enabled in open beta ([3e20e7b](https://github.com/emirhannaneli/havit-console/commit/3e20e7b1298c5d679dbd6dbf0c90ed040b522174))
+
 ## [0.4.0](https://github.com/emirhannaneli/havit-console/compare/v0.3.0...v0.4.0) (2026-11-08)
 
 
