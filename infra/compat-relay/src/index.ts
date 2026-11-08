@@ -57,10 +57,10 @@ interface Report {
 }
 
 const json = (status: number, data: unknown) =>
-  new Response(JSON.stringify(data), {
+  new Response(status === 204 ? null : JSON.stringify(data), {
     status,
     headers: {
-      "content-type": "application/json",
+      ...(status === 204 ? {} : { "content-type": "application/json" }),
       "access-control-allow-origin": "*",
       "access-control-allow-headers": "content-type",
       "access-control-allow-methods": "POST, OPTIONS",
@@ -75,7 +75,7 @@ const RE = {
   os: /^[\w .()/-]{1,80}$/,
   installId: /^[0-9a-f-]{8,64}$/,
   fingerprint: /^[0-9a-f]{16,64}$/,
-  family: /^[a-z_]{1,24}$/,
+  family: /^[a-z0-9_-]{1,32}$/,
   iface: /^[\w ()-]{1,40}$/,
 };
 

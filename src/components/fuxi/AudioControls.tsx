@@ -1,9 +1,8 @@
 import React from "react";
 import { Volume1 } from "lucide-react";
-import type { FuxiAudioEndpointStatus } from "../../types";
+import type { FuxiAudioEndpointStatus, FuxiAudioPeaks, RoomSize } from "../../types";
 import { Button, Row, Section, Segmented, Slider, Switch } from "../ui";
-
-import type { RoomSize } from "../../types";
+import { PulseHalo, VuMeter } from "./AudioVisualizer";
 import { useT, type MessageKey } from "../../i18n";
 export type { RoomSize };
 
@@ -27,6 +26,7 @@ const posFromBalance = (left: number, right: number) =>
 
 interface AudioControlsProps {
   status: FuxiAudioEndpointStatus;
+  peaks?: FuxiAudioPeaks;
   onVolumeChange: (vol: number, muted: boolean) => void;
   onBalanceChange: (left: number, right: number) => void;
   surround71: boolean;
@@ -37,6 +37,7 @@ interface AudioControlsProps {
 
 export const AudioControls: React.FC<AudioControlsProps> = ({
   status,
+  peaks,
   onVolumeChange,
   onBalanceChange,
   surround71,
@@ -58,22 +59,32 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
       }
     >
       <Row label={t("headset.volume")} htmlFor="fx-vol">
-        <span className="flex items-center gap-2">
-          <Volume1 aria-hidden="true" className="h-3.5 w-3.5 text-secondary" />
-          <Slider
-            id="fx-vol"
-            min={0}
-            max={100}
-            value={status.speaker_volume}
-            disabled={status.speaker_muted}
-            onChange={(e) =>
-              onVolumeChange(Number(e.target.value), status.speaker_muted)
-            }
-            valueText={
-              status.speaker_muted ? t("headset.muted") : `${status.speaker_volume}%`
-            }
-          />
-        </span>
+        <div className="flex flex-col gap-1.5 min-w-[240px] sm:min-w-[280px]">
+          <span className="flex items-center gap-2">
+            <PulseHalo level={peaks?.speaker_peak ?? 0}>
+              <Volume1 aria-hidden="true" className="h-3.5 w-3.5 text-secondary flex-none" />
+            </PulseHalo>
+            <Slider
+              id="fx-vol"
+              min={0}
+              max={100}
+              value={status.speaker_volume}
+              disabled={status.speaker_muted}
+              onChange={(e) =>
+                onVolumeChange(Number(e.target.value), status.speaker_muted)
+              }
+              valueText={
+                status.speaker_muted ? t("headset.muted") : `${status.speaker_volume}%`
+              }
+            />
+          </span>
+          <div className="pl-5 pr-12">
+            <VuMeter
+              level={peaks?.speaker_peak ?? 0}
+              muted={status.speaker_muted}
+            />
+          </div>
+        </div>
       </Row>
 
       <Row label={t("headset.mute")}>

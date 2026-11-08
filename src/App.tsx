@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, PanelLeft, RefreshCw } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Download, PanelLeft, RefreshCw } from "lucide-react";
 import type {
   DetectedDeviceStatus,
   FirmwareUpdate,
@@ -165,6 +165,34 @@ export default function App() {
               {loading ? t("app.scanning") : t("app.scan")}
             </Button>
           </header>
+
+          {appUpdate.state.phase === "available" && view !== "updates" && (
+            <div className="flex items-center justify-between gap-3 border-b border-accent/30 bg-accent/15 px-4 py-2 text-xs">
+              <div className="flex items-center gap-2">
+                <Download aria-hidden="true" className="h-4 w-4 flex-none text-accent" />
+                <span className="font-medium text-label">
+                  {t("updates.app.available", { version: appUpdate.state.version ?? "" })}
+                </span>
+              </div>
+              <Button variant="primary" onClick={() => setView("updates")}>
+                {t("updates.app.install")}
+              </Button>
+            </div>
+          )}
+
+          {appUpdate.state.phase === "ready" && (
+            <div className="flex items-center justify-between gap-3 border-b border-success/30 bg-success/15 px-4 py-2 text-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 aria-hidden="true" className="h-4 w-4 flex-none text-success" />
+                <span className="font-medium text-label">
+                  {t("updates.app.ready", { version: appUpdate.state.version ?? "" })}
+                </span>
+              </div>
+              <Button variant="primary" onClick={appUpdate.restart}>
+                {t("updates.app.relaunch")}
+              </Button>
+            </div>
+          )}
 
           <main className="flex-1 overflow-y-auto px-4 pt-6 pb-10 sm:px-8">
             <div

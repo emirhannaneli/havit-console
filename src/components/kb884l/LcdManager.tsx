@@ -132,11 +132,11 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     try {
       setUploading(true);
       setStatusMsg(null);
-      const res = await uploadKb884lMedia(selectedFilePath, uploadSlot, fit);
+      await uploadKb884lMedia(selectedFilePath, uploadSlot, fit);
       setOnScreenSlot(uploadSlot);
       setPreviewSource("app");
       setSelectedFilePath(null);
-      setStatusMsg({ type: "success", text: res });
+      setStatusMsg({ type: "success", text: t("screen.uploadSuccess") });
     } catch (err) {
       setStatusMsg({ type: "error", text: t("screen.error.upload", { error: String(err) }) });
     } finally {
@@ -148,8 +148,8 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
     try {
       setClockSyncing(true);
       setStatusMsg(null);
-      const res = await syncKb884lClock(uploadSlot);
-      setStatusMsg({ type: "success", text: res });
+      await syncKb884lClock(uploadSlot);
+      setStatusMsg({ type: "success", text: t("screen.clock.success") });
     } catch (err) {
       setStatusMsg({ type: "error", text: t("screen.error.clock", { error: String(err) }) });
     } finally {

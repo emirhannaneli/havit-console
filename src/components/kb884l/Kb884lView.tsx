@@ -67,9 +67,9 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
     try {
       setApplyingLighting(true);
       setLightingMsg(null);
-      const res = await applyKb884lLighting(lighting);
+      await applyKb884lLighting(lighting);
       markLightingApplied();
-      setLightingMsg({ tone: "success", text: res });
+      setLightingMsg({ tone: "success", text: t("keyboard.applySuccess") });
       setTimeout(() => setLightingMsg(null), 4000);
     } catch (err) {
       setLightingMsg({ tone: "error", text: t("keyboard.applyFailed", { error: String(err) }) });
@@ -82,9 +82,9 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
     try {
       setSavingSettings(true);
       setSettingsMsg(null);
-      const res = await applyKb884lSettings(settings);
+      await applyKb884lSettings(settings);
       markSettingsApplied();
-      setSettingsMsg({ tone: "success", text: res });
+      setSettingsMsg({ tone: "success", text: t("keyboard.saveSuccess") });
       setTimeout(() => setSettingsMsg(null), 4000);
     } catch (err) {
       setSettingsMsg({ tone: "error", text: t("keyboard.saveFailed", { error: String(err) }) });

@@ -7,8 +7,8 @@ pub mod transport;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use device_registry::{discover_havit_devices, DetectedDeviceStatus};
 use devices::fuxi_h7::windows_audio::{
-    query_status, set_channel_balance, set_mic_volume, set_speaker_volume,
-    FuxiAudioEndpointStatus,
+    query_peaks, query_status, set_channel_balance, set_mic_volume, set_speaker_volume,
+    FuxiAudioEndpointStatus, FuxiAudioPeaks,
 };
 use devices::kb884l::driver::{
     apply_lighting, apply_settings, sync_keyboard_time, upload_lcd_frames,
@@ -166,6 +166,11 @@ fn fuxi_get_status() -> Result<FuxiAudioEndpointStatus, String> {
 }
 
 #[tauri::command]
+fn fuxi_get_audio_peaks() -> Result<FuxiAudioPeaks, String> {
+    Ok(query_peaks())
+}
+
+#[tauri::command]
 fn fuxi_set_speaker(volume: u8, muted: bool) -> Result<(), String> {
     set_speaker_volume(volume, muted)
 }
@@ -211,7 +216,10 @@ fn packet_log_clear() -> Result<(), String> {
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("main") {
+    let window = app
+        .get_webview_window("main")
+        .or_else(|| app.webview_windows().into_values().next());
+    if let Some(window) = window {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
@@ -255,6 +263,9 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main_window(app);
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -262,6 +273,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
             setup_tray(app)?;
+            show_main_window(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -283,6 +295,7 @@ pub fn run() {
             kb884l_upload_media_file,
             save_temp_media,
             fuxi_get_status,
+            fuxi_get_audio_peaks,
             fuxi_set_speaker,
             fuxi_set_balance,
             fuxi_set_mic,

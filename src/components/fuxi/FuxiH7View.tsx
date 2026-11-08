@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { FuxiAudioEndpointStatus } from "../../types";
 import { AudioControls } from "./AudioControls";
 import { ProfileQuickBar } from "../profiles/ProfileQuickBar";
 import { useDeviceSettings } from "../../state/DeviceSettings";
 import { EqualizerPanel } from "./EqualizerPanel";
 import { MicrophonePanel } from "./MicrophonePanel";
+import { useAudioPeaks } from "./useAudioPeaks";
+import { AmbientAudioGlow } from "./AudioVisualizer";
 import { Notice } from "../ui";
 import {
   fetchFuxiStatus,
@@ -20,6 +22,7 @@ interface FuxiH7ViewProps {
 
 export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
   const { t } = useT();
+  const peaks = useAudioPeaks(true);
   const [audioStatus, setAudioStatus] = useState<FuxiAudioEndpointStatus>({
     speaker_found: true,
     speaker_name: "Havit Fuxi-H7 Audio",
@@ -42,43 +45,101 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
     refreshStatus();
   }, []);
 
-  const handleSpeakerChange = async (vol: number, muted: boolean) => {
+  // Smooth, throttled hardware IPC dispatching:
+  // Updates UI state immediately (zero drag lag) while throttling WASAPI calls (~35ms)
+  // to prevent DAC buffer interruptions, crackling, and driver flooding.
+  const speakerThrottle = useRef<{ vol: number; muted: boolean } | null>(null);
+  const speakerTimer = useRef<number | null>(null);
+
+  const handleSpeakerChange = (vol: number, muted: boolean) => {
     setAudioStatus((prev) => ({
       ...prev,
       speaker_volume: vol,
       speaker_muted: muted,
     }));
-    try {
-      await setFuxiSpeaker(vol, muted);
-    } catch (e) {
-      console.error(e);
+    speakerThrottle.current = { vol, muted };
+    if (!speakerTimer.current) {
+      speakerTimer.current = window.setTimeout(async () => {
+        speakerTimer.current = null;
+        if (speakerThrottle.current) {
+          const { vol: v, muted: m } = speakerThrottle.current;
+          speakerThrottle.current = null;
+          try {
+            await setFuxiSpeaker(v, m);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }, 35);
     }
   };
 
-  const handleBalanceChange = async (left: number, right: number) => {
+  const balanceThrottle = useRef<{ left: number; right: number } | null>(null);
+  const balanceTimer = useRef<number | null>(null);
+
+  const handleBalanceChange = (left: number, right: number) => {
     setAudioStatus((prev) => ({
       ...prev,
       left_balance: left,
       right_balance: right,
     }));
-    try {
-      await setFuxiBalance(left, right);
-    } catch (e) {
-      console.error(e);
+    balanceThrottle.current = { left, right };
+    if (!balanceTimer.current) {
+      balanceTimer.current = window.setTimeout(async () => {
+        balanceTimer.current = null;
+        if (balanceThrottle.current) {
+          const { left: l, right: r } = balanceThrottle.current;
+          balanceThrottle.current = null;
+          try {
+            await setFuxiBalance(l, r);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }, 35);
     }
   };
 
-  const handleMicChange = async (vol: number, muted: boolean) => {
+  const micThrottle = useRef<{ vol: number; muted: boolean } | null>(null);
+  const micTimer = useRef<number | null>(null);
+
+  const handleMicChange = (vol: number, muted: boolean) => {
     setAudioStatus((prev) => ({ ...prev, mic_volume: vol, mic_muted: muted }));
-    try {
-      await setFuxiMic(vol, muted);
-    } catch (e) {
-      console.error(e);
+    micThrottle.current = { vol, muted };
+    if (!micTimer.current) {
+      micTimer.current = window.setTimeout(async () => {
+        micTimer.current = null;
+        if (micThrottle.current) {
+          const { vol: v, muted: m } = micThrottle.current;
+          micThrottle.current = null;
+          try {
+            await setFuxiMic(v, m);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }, 35);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (speakerTimer.current) clearTimeout(speakerTimer.current);
+      if (balanceTimer.current) clearTimeout(balanceTimer.current);
+      if (micTimer.current) clearTimeout(micTimer.current);
+    };
+  }, []);
 
   return (
     <>
+      <AmbientAudioGlow
+        left={peaks.speaker_left}
+        right={peaks.speaker_right}
+        peak={peaks.speaker_peak}
+        micPeak={peaks.mic_peak}
+        active={!audioStatus.speaker_muted}
+      />
+
       {!connected && (
         <Notice tone="warning" title={t("headset.notDetected.title")}>
           {t("headset.notDetected.body")}
@@ -102,6 +163,7 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
 
       <AudioControls
         status={audioStatus}
+        peaks={peaks}
         onVolumeChange={handleSpeakerChange}
         onBalanceChange={handleBalanceChange}
         surround71={dsp.surround71}
@@ -112,6 +174,7 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
 
       <MicrophonePanel
         status={audioStatus}
+        peak={peaks.mic_peak}
         onMicChange={handleMicChange}
         encEnabled={dsp.enc}
         onEncChange={(enc) => setDsp({ enc })}

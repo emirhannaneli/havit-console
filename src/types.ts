@@ -102,6 +102,13 @@ export interface LcdFramePreview {
   rgb565_be_base64: string;
 }
 
+export interface FuxiAudioPeaks {
+  speaker_peak: number;  // 0.0 .. 1.0
+  speaker_left: number;  // 0.0 .. 1.0
+  speaker_right: number; // 0.0 .. 1.0
+  mic_peak: number;      // 0.0 .. 1.0
+}
+
 export interface FuxiAudioEndpointStatus {
   speaker_found: boolean;
   speaker_name: string;

@@ -7,6 +7,7 @@ import type {
   FirmwareUpdate,
   FirmwareUpdateCheck,
   FuxiAudioEndpointStatus,
+  FuxiAudioPeaks,
   Kb884lLightingConfig,
   Kb884lPhysicalLayout,
   Kb884lSettingsConfig,
@@ -24,14 +25,14 @@ const mockDevices: DetectedDeviceStatus[] = [
     model: "KB884L",
     family: "hfd",
     support: "verified",
-    name: "Havit KB884L RGB TFT Gaming Keyboard",
+    name: "Havit KB884L",
     category: "keyboard",
     connected: true,
     connection_type: "USB wired",
     vid_hex: "0x05AC",
     pid_hex: "0x024F",
     firmware_version: "1.20",
-    matched_interfaces: ["MI_00 (0xFF13)", "MI_01 (0xFF68)"],
+    matched_interfaces: [],
     capabilities: {
       rgb_lighting: true,
       per_key_rgb: true,
@@ -50,14 +51,14 @@ const mockDevices: DetectedDeviceStatus[] = [
     model: "Fuxi-H7",
     family: "xiisound",
     support: "verified",
-    name: "Havit Fuxi-H7 Quad-Mode Gaming Headset",
+    name: "Havit Fuxi-H7",
     category: "headset",
     connected: true,
     connection_type: "2.4 GHz wireless receiver",
     vid_hex: "0x040B",
     pid_hex: "0x0897",
     firmware_version: "0.32",
-    matched_interfaces: ["MI_00 (Audio)", "MI_03 (0xF100)"],
+    matched_interfaces: [],
     capabilities: {
       rgb_lighting: false,
       per_key_rgb: false,
@@ -274,6 +275,20 @@ export async function fetchFuxiStatus(): Promise<FuxiAudioEndpointStatus> {
     mic_name: "Havit Fuxi-H7 Mic",
     mic_volume: 85,
     mic_muted: false,
+  };
+}
+
+export async function fetchFuxiAudioPeaks(): Promise<FuxiAudioPeaks> {
+  if (isTauri()) {
+    return invoke<FuxiAudioPeaks>("fuxi_get_audio_peaks");
+  }
+  const t = Date.now() / 300;
+  const s = Math.max(0, Math.sin(t) * 0.7 + Math.random() * 0.3);
+  return {
+    speaker_peak: s,
+    speaker_left: Math.max(0, Math.min(1, s * (0.8 + Math.random() * 0.4))),
+    speaker_right: Math.max(0, Math.min(1, s * (0.8 + Math.random() * 0.4))),
+    mic_peak: Math.max(0, Math.sin(t * 1.5) * 0.4 + Math.random() * 0.2),
   };
 }
 

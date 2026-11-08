@@ -33,3 +33,4 @@ graphify-out/
 # Local tooling scratch
 .playwright-mcp/
 .patch_*.py
+docs/superpowers/

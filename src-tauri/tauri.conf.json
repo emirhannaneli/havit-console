@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Havit Console",
         "width": 1240,
         "height": 800,
