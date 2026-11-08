@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/emirhannaneli/havit-console/compare/v0.5.0...v0.6.0) (2026-11-08)
+
+
+### Features
+
+* **release:** ship macOS and Linux builds ([a5ffd99](https://github.com/emirhannaneli/havit-console/commit/a5ffd99691227fe3a2b2b6c63be60b294fab899b))
+* **release:** ship macOS and Linux builds ([5755081](https://github.com/emirhannaneli/havit-console/commit/575508198429e88032dd02fcd1a9d7a5ac2334b5))
+
 ## [0.5.0](https://github.com/emirhannaneli/havit-console/compare/v0.4.2...v0.5.0) (2026-11-08)
 
 
