@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/emirhannaneli/havit-console/compare/v0.4.1...v0.4.2) (2026-11-08)
+
+
+### Bug Fixes
+
+* **ui:** apply brand red theme, smooth transitions, and keyboard layout fix ([f3e2fec](https://github.com/emirhannaneli/havit-console/commit/f3e2fecb694aa2980c55c5858476bcffdbb51a3a))
+
 ## [0.4.1](https://github.com/emirhannaneli/havit-console/compare/v0.4.0...v0.4.1) (2026-11-08)
 
 
