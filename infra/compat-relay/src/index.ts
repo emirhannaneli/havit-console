@@ -86,17 +86,23 @@ function text(v: unknown, max: number): string | null {
   return s.length > 0 && s.length <= max ? s : null;
 }
 
+/** Single-line variant: line breaks are removed as well (device names, log lines, errors). */
+function line(v: unknown, max: number): string | null {
+  const s = text(v, max);
+  return s === null ? null : s.replace(/[\r\n]+/g, " ").trim() || null;
+}
+
 function device(v: unknown): Device | string {
   if (!v || typeof v !== "object") return "device must be an object";
   const d = v as Record<string, unknown>;
-  const name = text(d.name, 80);
+  const name = line(d.name, 80);
   if (!name) return "device name";
   if (typeof d.vid !== "string" || !RE.hex16.test(d.vid)) return "device vid";
   if (typeof d.pid !== "string" || !RE.hex16.test(d.pid)) return "device pid";
   if (typeof d.family !== "string" || !RE.family.test(d.family)) return "device family";
   if (!["verified", "experimental", "unknown"].includes(String(d.support))) return "device support";
   if (typeof d.connected !== "boolean") return "device connected";
-  const firmware = d.firmware === null || d.firmware === undefined ? null : text(d.firmware, 16);
+  const firmware = d.firmware === null || d.firmware === undefined ? null : line(d.firmware, 16);
   if (d.firmware && !firmware) return "device firmware";
   if (!Array.isArray(d.interfaces) || d.interfaces.length > 16) return "device interfaces";
   const interfaces = d.interfaces.map((i) => (typeof i === "string" && RE.iface.test(i) ? i : null));
@@ -140,9 +146,9 @@ function validate(x: unknown): Report | string {
   };
   if (r.error !== undefined) {
     const e = r.error as Record<string, unknown>;
-    const dev = text(e?.device, 80);
-    const action = text(e?.action, 40);
-    const message = text(e?.message, 500);
+    const dev = line(e?.device, 80);
+    const action = line(e?.action, 40);
+    const message = line(e?.message, 500);
     if (!dev || !action || !message) return "bad error";
     out.error = { device: dev, action, message };
   }
@@ -153,7 +159,7 @@ function validate(x: unknown): Report | string {
   }
   if (r.log !== undefined) {
     if (!Array.isArray(r.log) || r.log.length > MAX_LOG_LINES) return "bad log";
-    const lines = r.log.map((l) => text(l, 240));
+    const lines = r.log.map((l) => line(l, 240));
     if (lines.some((l) => l === null)) return "bad log line";
     out.log = lines as string[];
   }
@@ -165,8 +171,13 @@ function validate(x: unknown): Report | string {
 /** Inline code span; backticks and pipes removed so the table and span can't be broken out of. */
 const code = (s: string) => "`" + s.replace(/[`|\r\n]/g, " ") + "`";
 
-/** Fenced block; a fence inside the text is defused by indenting it. */
-const fence = (lines: string[]) => "```\n" + lines.map((l) => l.replace(/^```/gm, " ```")).join("\n") + "\n```";
+/** Fenced block whose fence is longer than any backtick run in the content, so it can't be closed early. */
+function fence(lines: string[]): string {
+  const body = lines.join("\n");
+  const longest = Math.max(0, ...(body.match(/`+/g) ?? []).map((m) => m.length));
+  const f = "`".repeat(Math.max(3, longest + 1));
+  return `${f}\n${body}\n${f}`;
+}
 
 function render(r: Report): { title: string; body: string } {
   const names = r.devices.map((d) => d.name).join(", ");
@@ -220,16 +231,40 @@ async function github(env: Env, path: string, body: unknown): Promise<Response> 
   });
 }
 
+/** Reads the body as a stream and gives up (null) once more than `max` bytes have arrived. */
+async function readCapped(req: Request, max: number): Promise<string | null> {
+  if (Number(req.headers.get("content-length") ?? "0") > max) return null;
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const buf = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    buf.set(c, off);
+    off += c.byteLength;
+  }
+  return new TextDecoder().decode(buf);
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     if (req.method === "OPTIONS") return json(204, null);
     const url = new URL(req.url);
     if (req.method !== "POST" || url.pathname !== "/v1/report") return json(404, { error: "not found" });
 
-    const len = Number(req.headers.get("content-length") ?? "0");
-    if (len > MAX_BODY_BYTES) return json(413, { error: "report too large" });
-    const raw = await req.text();
-    if (raw.length > MAX_BODY_BYTES) return json(413, { error: "report too large" });
+    const raw = await readCapped(req, MAX_BODY_BYTES);
+    if (raw === null) return json(413, { error: "report too large" });
 
     let parsed: unknown;
     try {
