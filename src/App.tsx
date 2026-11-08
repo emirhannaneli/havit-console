@@ -18,6 +18,7 @@ import { ONBOARDED_PREF, OnboardingSheet } from "./components/OnboardingSheet";
 import { Button, readPref, StatusDot } from "./components/ui";
 import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
 import { DeviceSettingsProvider } from "./state/DeviceSettings";
+import { reportInventory } from "./telemetry";
 
 const TITLES: Record<View, string> = {
   devices: "Devices",
@@ -76,6 +77,7 @@ export default function App() {
       const devList = await fetchConnectedDevices();
       setDevices(devList);
       setScanError(null);
+      void reportInventory(devList);
     } catch (err) {
       console.error("Device scan failed:", err);
       setScanError(String(err));

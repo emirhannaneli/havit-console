@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Check, Headphones, Info, Keyboard } from "lucide-react";
 import type { DetectedDeviceStatus } from "../types";
 import { AUTO_CHECK_PREF } from "./updates/UpdatesView";
+import { AUTO_SEND_PREF } from "../telemetry";
 import { Button, Card, ConnectionLabel, cx, readPref, Row, Sheet, Switch, writePref } from "./ui";
 
 export const ONBOARDED_PREF = "onboarded";
@@ -22,10 +23,12 @@ export const OnboardingSheet: React.FC<{
 }> = ({ open, devices, scanning, onDone }) => {
   const [step, setStep] = useState(1);
   const [autoCheck, setAutoCheck] = useState(() => readPref(AUTO_CHECK_PREF, true));
+  const [shareReports, setShareReports] = useState(() => readPref(AUTO_SEND_PREF, true));
   const connected = KNOWN.filter((k) => devices.find((d) => d.id === k.id)?.connected).length;
 
   const finish = () => {
     writePref(AUTO_CHECK_PREF, autoCheck);
+    writePref(AUTO_SEND_PREF, shareReports);
     writePref(ONBOARDED_PREF, true);
     onDone();
   };
@@ -52,8 +55,9 @@ export const OnboardingSheet: React.FC<{
               </div>
               <Card className="w-full max-w-[420px] text-left">
                 {[
+                  "Open beta: the KB884L and Fuxi-H7 are verified; other Havit devices are detected so you can report how they behave.",
                   "Open source; all code is on GitHub.",
-                  "No data collection, no account.",
+                  "No data collection, no account. Compatibility reports are drafts you review and submit yourself.",
                   "Not affiliated with Havit; an independent community project.",
                 ].map((t) => (
                   <span key={t} className="flex items-start gap-2.5 px-3.5 py-2.5">
@@ -110,12 +114,18 @@ export const OnboardingSheet: React.FC<{
                   You’re all set
                 </h2>
                 <p className="m-0 max-w-[420px] leading-[18px] text-secondary">
-                  Open your devices from the sidebar. You can change this setting later in Updates.
+                  Open your devices from the sidebar. You can change these settings later in Updates.
                 </p>
               </div>
               <Card className="w-full max-w-[420px] text-left">
                 <Row label="Check for updates automatically">
                   <Switch label="Check for updates automatically" checked={autoCheck} onChange={setAutoCheck} />
+                </Row>
+                <Row
+                  label="Share compatibility reports"
+                  description="Open beta: when a Havit device without a tested driver is detected, or a command fails, send device IDs, firmware and app versions and the packet log as a public GitHub issue. No names or serial numbers."
+                >
+                  <Switch label="Share compatibility reports" checked={shareReports} onChange={setShareReports} />
                 </Row>
               </Card>
             </div>

@@ -1,6 +1,7 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { withFailureReport } from "./telemetry";
 import type {
   DetectedDeviceStatus,
   FirmwareUpdate,
@@ -21,6 +22,8 @@ const mockDevices: DetectedDeviceStatus[] = [
   {
     id: "kb884l",
     model: "KB884L",
+    family: "hfd",
+    support: "verified",
     name: "Havit KB884L RGB TFT Gaming Keyboard",
     category: "keyboard",
     connected: true,
@@ -45,6 +48,8 @@ const mockDevices: DetectedDeviceStatus[] = [
   {
     id: "fuxi-h7",
     model: "Fuxi-H7",
+    family: "xiisound",
+    support: "verified",
     name: "Havit Fuxi-H7 Quad-Mode Gaming Headset",
     category: "headset",
     connected: true,
@@ -178,14 +183,14 @@ export async function fetchKb884lLayout(): Promise<Kb884lPhysicalLayout> {
 
 export async function syncKb884lClock(slotId = 0): Promise<string> {
   if (isTauri()) {
-    return invoke<string>("kb884l_sync_time", { slotId });
+    return withFailureReport("kb884l", "sync clock", () => invoke<string>("kb884l_sync_time", { slotId }));
   }
   return "Simulated: Clock synced to current system time.";
 }
 
 export async function applyKb884lLighting(cfg: Kb884lLightingConfig): Promise<string> {
   if (isTauri()) {
-    return invoke<string>("kb884l_apply_lighting_cfg", { cfg });
+    return withFailureReport("kb884l", "apply lighting", () => invoke<string>("kb884l_apply_lighting_cfg", { cfg }));
   }
   return `Simulated: Applied lighting mode ${cfg.mode}`;
 }
@@ -199,7 +204,7 @@ export async function loadKb884lState(): Promise<Kb884lSavedState> {
 
 export async function applyKb884lSettings(cfg: Kb884lSettingsConfig): Promise<string> {
   if (isTauri()) {
-    return invoke<string>("kb884l_apply_settings_cfg", { cfg });
+    return withFailureReport("kb884l", "apply settings", () => invoke<string>("kb884l_apply_settings_cfg", { cfg }));
   }
   return "Simulated: Applied hardware settings";
 }
@@ -216,7 +221,9 @@ export async function previewKb884lMediaFile(
 
 export async function uploadKb884lMedia(filePath: string, slotId = 0, fit: LcdFit = "fit"): Promise<string> {
   if (isTauri()) {
-    return invoke<string>("kb884l_upload_media_file", { filePath, slotId, fit });
+    return withFailureReport("kb884l", "upload screen media", () =>
+      invoke<string>("kb884l_upload_media_file", { filePath, slotId, fit })
+    );
   }
   return "Simulated: Uploaded media frames to LCD";
 }
@@ -272,19 +279,19 @@ export async function fetchFuxiStatus(): Promise<FuxiAudioEndpointStatus> {
 
 export async function setFuxiSpeaker(volume: number, muted: boolean): Promise<void> {
   if (isTauri()) {
-    return invoke("fuxi_set_speaker", { volume, muted });
+    return withFailureReport("fuxi-h7", "set volume", () => invoke("fuxi_set_speaker", { volume, muted }));
   }
 }
 
 export async function setFuxiBalance(left: number, right: number): Promise<void> {
   if (isTauri()) {
-    return invoke("fuxi_set_balance", { left, right });
+    return withFailureReport("fuxi-h7", "set balance", () => invoke("fuxi_set_balance", { left, right }));
   }
 }
 
 export async function setFuxiMic(volume: number, muted: boolean): Promise<void> {
   if (isTauri()) {
-    return invoke("fuxi_set_mic", { volume, muted });
+    return withFailureReport("fuxi-h7", "set microphone", () => invoke("fuxi_set_mic", { volume, muted }));
   }
 }
 

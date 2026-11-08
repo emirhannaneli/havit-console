@@ -4,6 +4,7 @@ import { version as appVersion } from "../../../package.json";
 import type { DetectedDeviceStatus, FirmwareUpdate, FirmwareUpdateCheck } from "../../types";
 import { Button, ConnectionLabel, Notice, readPref, Row, Section, Switch, writePref } from "../ui";
 import type { AppUpdate } from "./useAppUpdate";
+import { autoSendEnabled, setAutoSend } from "../../telemetry";
 
 const DEVICES: { id: string; title: string; icon: React.ElementType }[] = [
   { id: "kb884l", title: "KB884L Keyboard", icon: Keyboard },
@@ -38,6 +39,7 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
 }) => {
   const [openNotes, setOpenNotes] = useState<string | null>(null);
   const [autoCheck, setAutoCheck] = useState(() => readPref(AUTO_CHECK_PREF, true));
+  const [shareReports, setShareReports] = useState(autoSendEnabled);
   const updates = check?.updates ?? [];
   const a = app.state;
   const appBusy = a.phase === "downloading";
@@ -220,6 +222,19 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
             onChange={(v) => {
               setAutoCheck(v);
               writePref(AUTO_CHECK_PREF, v);
+            }}
+          />
+        </Row>
+        <Row
+          label="Share compatibility reports"
+          description="Sends device IDs, firmware and app versions and the packet log as a public GitHub issue when an untested device is detected or a command fails. Never names or serial numbers."
+        >
+          <Switch
+            label="Share compatibility reports"
+            checked={shareReports}
+            onChange={(v) => {
+              setShareReports(v);
+              setAutoSend(v);
             }}
           />
         </Row>

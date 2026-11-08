@@ -1,0 +1,16 @@
+name = "havit-console-reports"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+# KV namespace for rate limits and fingerprint → issue mapping.
+# Create it once: `npx wrangler kv namespace create STATE`, then paste the id below.
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+GITHUB_REPO = "emirhannaneli/havit-console"
+LABELS = "compatibility,beta,auto-report"
+
+# Secret (never in this file): `npx wrangler secret put GITHUB_TOKEN`
+# Fine-grained PAT, repository emirhannaneli/havit-console only, permission Issues: read & write.

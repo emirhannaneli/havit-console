@@ -4,6 +4,7 @@ import { version as appVersion } from "../../package.json";
 import type { DetectedDeviceStatus } from "../types";
 import { openExternal } from "../api";
 import { cx, StatusDot } from "./ui";
+import { BetaBadge } from "./DevicesView";
 
 export const REPO_URL = "https://github.com/emirhannaneli/havit-console";
 
@@ -52,8 +53,9 @@ const DEVICE_ITEMS: { id: View & ("kb884l" | "fuxi-h7"); label: string; icon: Re
 
 export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, updateCount }) => (
   <aside className="flex w-[240px] flex-none flex-col overflow-y-auto border-r border-separator bg-sidebar">
-    <div className="flex h-[52px] flex-none items-center px-4 text-[13px] font-semibold">
+    <div className="flex h-[52px] flex-none items-center gap-2 px-4 text-[13px] font-semibold">
       Havit Console
+      <BetaBadge />
     </div>
 
     <nav aria-label="Sidebar" className="flex flex-col gap-0.5 px-2.5 pb-4">
@@ -113,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
 
     <footer className="mt-auto flex h-11 flex-none items-center border-t border-separator px-3">
       <span className="w-8" aria-hidden="true" />
-      <span className="flex-1 text-center text-[11px] text-secondary tabular-nums">Version {appVersion}</span>
+      <span className="flex-1 text-center text-[11px] text-secondary tabular-nums">Version {appVersion} · beta</span>
       <button
         type="button"
         aria-label="Open the GitHub repository"

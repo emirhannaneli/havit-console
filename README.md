@@ -64,6 +64,15 @@ would require replacing the firmware.
 
 ---
 
+## Open beta
+
+Havit Console is in open beta. The KB884L and Fuxi-H7 are verified on real hardware; every
+other Havit device is only detected. The onboarding wizard asks whether to **share
+compatibility reports**; with that on, the app files a GitHub issue when it detects an untested
+Havit device or a device command fails (USB IDs, firmware and app versions, the packet log;
+never names or serial numbers). With it off, **Devices → Report compatibility…** opens a
+prefilled issue draft you submit yourself. Details: [`docs/compatibility-reports.md`](docs/compatibility-reports.md).
+
 ## Install
 
 Download `Havit Console_X.Y.Z_x64-setup.exe` from the

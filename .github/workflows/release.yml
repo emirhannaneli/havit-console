@@ -71,3 +71,6 @@ jobs:
         with:
           releaseId: ${{ needs.release-please.outputs.release_id }}
           includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          # The bundler downloads NSIS from GitHub at build time; that download fails now and then.
+          retryAttempts: 3

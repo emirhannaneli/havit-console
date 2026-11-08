@@ -1,4 +1,4 @@
-export type DeviceCategory = "keyboard" | "headset" | "mouse" | "microphone";
+export type DeviceCategory = "keyboard" | "headset" | "mouse" | "microphone" | "unknown";
 
 export interface DeviceCapabilities {
   rgb_lighting: boolean;
@@ -13,11 +13,16 @@ export interface DeviceCapabilities {
   battery_status: boolean;
 }
 
+export type SupportLevel = "verified" | "experimental" | "unknown";
+
 export interface DetectedDeviceStatus {
   id: string;
   model: string;
   name: string;
   category: DeviceCategory;
+  /** Protocol family that owns the driver: "hfd", "xiisound", "qmk_via", "unknown". */
+  family: string;
+  support: SupportLevel;
   connected: boolean;
   connection_type: string;
   vid_hex: string;
