@@ -6,7 +6,7 @@ compatibility_date = "2026-01-01"
 # Create it once: `npx wrangler kv namespace create STATE`, then paste the id below.
 [[kv_namespaces]]
 binding = "STATE"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "ee29aff5019d44a385c1354141d682c2"
 
 [vars]
 GITHUB_REPO = "emirhannaneli/havit-console"

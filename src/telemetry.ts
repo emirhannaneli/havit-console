@@ -21,7 +21,7 @@ import { readPref, writePref } from "./components/ui";
  */
 
 export const AUTO_SEND_PREF = "reports.autoSend";
-export const REPORT_ENDPOINT = "https://havit-console-reports.emirhannaneli.workers.dev/v1/report";
+export const REPORT_ENDPOINT = "https://havit-console-reports.emirman.workers.dev/v1/report";
 const INSTALL_ID_KEY = "havit-console:reports.installId";
 const SENT_KEY = "havit-console:reports.sent";
 const AUTO_LOG_LINES = 20;
