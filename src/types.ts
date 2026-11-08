@@ -120,6 +120,10 @@ export interface FuxiAudioEndpointStatus {
   mic_name: string;
   mic_volume: number;     // 0..100
   mic_muted: boolean;
+  connection_mode?: "dongle" | "bluetooth" | "wired" | "unknown";
+  battery_level?: number | null;
+  is_charging?: boolean | null;
+  power_status?: string;
 }
 
 export type RoomSize = "small" | "medium" | "large";

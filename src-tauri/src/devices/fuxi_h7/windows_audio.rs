@@ -20,6 +20,10 @@ pub struct FuxiAudioEndpointStatus {
     pub mic_name: String,
     pub mic_volume: u8,         // 0..100
     pub mic_muted: bool,
+    pub connection_mode: String,   // "dongle" | "bluetooth" | "wired" | "unknown"
+    pub battery_level: Option<u8>, // 0..100
+    pub is_charging: Option<bool>,
+    pub power_status: String,
 }
 
 impl Default for FuxiAudioEndpointStatus {
@@ -35,6 +39,10 @@ impl Default for FuxiAudioEndpointStatus {
             mic_name: "Fuxi-H7 Mic (Disconnected)".to_string(),
             mic_volume: 85,
             mic_muted: false,
+            connection_mode: "unknown".to_string(),
+            battery_level: None,
+            is_charging: None,
+            power_status: "disconnected".to_string(),
         }
     }
 }
@@ -155,7 +163,7 @@ mod win_impl {
             .ok();
     }
 
-    unsafe fn find_fuxi_endpoint(flow: EDataFlow) -> Option<(IMMDevice, String)> {
+    pub(crate) unsafe fn find_fuxi_endpoint(flow: EDataFlow) -> Option<(IMMDevice, String)> {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
         let enumerator: IMMDeviceEnumerator =
             CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
@@ -191,6 +199,38 @@ mod win_impl {
             if let Some((dev, name)) = find_fuxi_endpoint(eRender) {
                 status.speaker_found = true;
                 status.speaker_name = name;
+
+                // Detect connection mode (Dongle / Bluetooth / Wired) and power status
+                let pkey_path = windows::Win32::UI::Shell::PropertiesSystem::PROPERTYKEY {
+                    fmtid: windows::core::GUID::from_u128(0xB3F8FA53_0004_438E_9003_51A46E139BFC),
+                    pid: 2,
+                };
+                if let Ok(props) = dev.OpenPropertyStore(STGM_READ) {
+                    if let Ok(val) = props.GetValue(&pkey_path) {
+                        let path = val.to_string();
+                        let upper = path.to_ascii_uppercase();
+                        if upper.contains("BTHENUM")
+                            || upper.contains("BTHHFENUM")
+                            || upper.contains("BTH_")
+                            || upper.contains("BLUETOOTH")
+                        {
+                            status.connection_mode = "bluetooth".to_string();
+                            status.power_status = "bluetooth".to_string();
+                            status.battery_level = query_bth_battery(&upper);
+                        } else if upper.contains("VID_040B&PID_0897")
+                            || upper.contains("VID_040B&PID_0896")
+                            || upper.contains("VID_040B&PID_0898")
+                        {
+                            status.connection_mode = "dongle".to_string();
+                            status.power_status = "dongle".to_string();
+                        } else if upper.contains("USB") {
+                            status.connection_mode = "wired".to_string();
+                            status.is_charging = Some(true);
+                            status.power_status = "wired".to_string();
+                        }
+                    }
+                }
+
                 if let Ok(ep) = dev.Activate::<IAudioEndpointVolume>(CLSCTX_ALL, None) {
                     if let Ok(v) = ep.GetMasterVolumeLevelScalar() {
                         status.speaker_volume = (v * 100.0).round().clamp(0.0, 100.0) as u8;
@@ -212,8 +252,8 @@ mod win_impl {
                                     status.right_balance = (r / peak * 100.0).round().clamp(0.0, 100.0) as u8;
                                     if !TARGET_BALANCE_INITIALIZED.load(Ordering::Relaxed) {
                                         TARGET_BALANCE.store(
-                                            ((status.left_balance as u16) << 8) | (status.right_balance as u16),
-                                            Ordering::Relaxed,
+                                             ((status.left_balance as u16) << 8) | (status.right_balance as u16),
+                                             Ordering::Relaxed,
                                         );
                                         TARGET_BALANCE_INITIALIZED.store(true, Ordering::Relaxed);
                                     }
@@ -237,6 +277,22 @@ mod win_impl {
             }
         }
         status
+    }
+
+    fn query_bth_battery(path: &str) -> Option<u8> {
+        let chars: Vec<char> = path.chars().collect();
+        for window in chars.windows(12) {
+            if window.iter().all(|c| c.is_ascii_hexdigit()) {
+                let s: String = window.iter().collect();
+                if s != "000000000000" && s != "FFFFFFFFFFFF" {
+                    // Try to read battery percent from registry
+                    // Registry key: HKLM\SYSTEM\CurrentControlSet\Services\BTHPORT\Parameters\Devices\<mac>
+                    // or standard Windows PnP location
+                    return None;
+                }
+            }
+        }
+        None
     }
 
     pub fn set_speaker_volume(volume: u8, muted: bool) -> Result<(), String> {
@@ -396,22 +452,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn dump_audio_devices() {
+    fn dump_fuxi_endpoint_properties() {
         let status = query_status();
-        println!("AUDIO STATUS: {:?}", status);
-
-        // First call starts capture worker
-        let p0 = query_peaks();
-        println!("Initial peaks: {:?}", p0);
-
-        std::thread::sleep(std::time::Duration::from_millis(80));
-        let p1 = query_peaks();
-        println!("Tick 1 peaks: {:?}", p1);
-
-        // Test volume preservation
-        if status.speaker_found {
-            let orig = status.speaker_volume;
-            let _ = set_speaker_volume(orig, status.speaker_muted);
-        }
+        println!("QUERY STATUS RESULT: {:?}", status);
+        assert!(status.speaker_found);
+        assert_eq!(status.connection_mode, "dongle");
+        assert_eq!(status.power_status, "dongle");
     }
 }

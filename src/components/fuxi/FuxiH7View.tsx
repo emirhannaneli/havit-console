@@ -7,6 +7,7 @@ import { EqualizerPanel } from "./EqualizerPanel";
 import { MicrophonePanel } from "./MicrophonePanel";
 import { useAudioPeaks } from "./useAudioPeaks";
 import { AmbientAudioGlow } from "./AudioVisualizer";
+import { HeadsetStatusBar } from "./HeadsetStatusBar";
 import { Notice } from "../ui";
 import {
   fetchFuxiStatus,
@@ -145,6 +146,8 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
           {t("headset.notDetected.body")}
         </Notice>
       )}
+
+      <HeadsetStatusBar status={audioStatus} connected={connected} />
 
       <ProfileQuickBar
         device="fuxi-h7"

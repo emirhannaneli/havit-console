@@ -275,6 +275,10 @@ export async function fetchFuxiStatus(): Promise<FuxiAudioEndpointStatus> {
     mic_name: "Havit Fuxi-H7 Mic",
     mic_volume: 85,
     mic_muted: false,
+    connection_mode: "dongle",
+    battery_level: null,
+    is_charging: null,
+    power_status: "dongle",
   };
 }
 
