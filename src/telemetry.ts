@@ -6,7 +6,7 @@ import { readPref, writePref } from "./components/ui";
 /**
  * Compatibility reports for the open beta.
  *
- * With the user's consent (`reports.autoSend`, off by default, asked during onboarding and
+ * With the user's consent (`reports.autoSend`, on by default in open beta, asked during onboarding and
  * changeable in Updates → Settings) the app sends structured reports to the relay in
  * `infra/compat-relay`, which validates them and files GitHub issues:
  *   - `inventory`: a Havit device without a verified driver was detected (once per device
@@ -69,7 +69,7 @@ export interface ReportParts {
   logDetail?: "full" | "summary";
 }
 
-export const autoSendEnabled = () => readPref(AUTO_SEND_PREF, false);
+export const autoSendEnabled = () => readPref(AUTO_SEND_PREF, true);
 export const setAutoSend = (on: boolean) => writePref(AUTO_SEND_PREF, on);
 
 export function installId(): string {

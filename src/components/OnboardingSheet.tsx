@@ -33,8 +33,8 @@ export const OnboardingSheet: React.FC<{
   const { t, tp, lang, setLang } = useT();
   const [step, setStep] = useState(1);
   const [autoCheck, setAutoCheck] = useState(() => readPref(AUTO_CHECK_PREF, true));
-  // Sharing is opt-in: off until the user turns it on here or in Settings.
-  const [shareReports, setShareReports] = useState(() => readPref(AUTO_SEND_PREF, false));
+  // Sharing is on by default in open beta to help collect device compatibility:
+  const [shareReports, setShareReports] = useState(() => readPref(AUTO_SEND_PREF, true));
   const connected = KNOWN.filter((k) => devices.find((d) => d.id === k.id)?.connected).length;
 
   const finish = () => {

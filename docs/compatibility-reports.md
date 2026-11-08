@@ -5,8 +5,8 @@ happens on theirs. Everything is opt-in.
 
 ## What the app sends, and when
 
-Consent is asked in the onboarding wizard ("Share compatibility reports", **off by
-default**) and can be changed any time in **Updates → Settings**. With consent on, the app
+Consent is asked in the onboarding wizard ("Share compatibility reports", **on by
+default** in open beta) and can be changed any time in **Updates → Settings**. With consent on, the app
 sends:
 
 | Event | Trigger | Contents |
