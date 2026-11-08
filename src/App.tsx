@@ -150,7 +150,7 @@ export default function App() {
               value={lang}
               options={LANGUAGES.map((l) => ({ value: l.id, label: l.label }))}
               onChange={setLang}
-              className="h-8 min-w-0 border-transparent bg-transparent text-secondary hover:bg-fill"
+              className="h-8 min-w-0! border-transparent bg-transparent text-secondary hover:bg-fill"
             />
             <Button
               variant="plain"
