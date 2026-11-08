@@ -24,7 +24,7 @@ needs one program per device. Havit Console replaces it with one small app built
 protocols ([`morluto/rea`](https://github.com/morluto/rea) + Ghidra).
 
 - **Light:** sits in the system tray, no background services.
-- **Private:** no telemetry, no account. Settings go to the device and to local JSON profiles.
+- **Privacy-first:** no ads, user analytics or account requirements. Settings stay on the hardware and in local profiles. During open beta, anonymous device compatibility reports (USB VID/PID only, no personal data) help expand hardware support and can be disabled anytime in Settings.
 - **Direct:** talks to the hardware over USB HID and Windows CoreAudio; no extra drivers.
 - **Independent:** a community project, not affiliated with Havit.
 
@@ -88,7 +88,7 @@ Havit Console is engineered for zero background overhead, minimal memory consump
 | **Idle CPU Usage** | 0.5% – 2.0% | **< 0.1%** | Zero CPU drain |
 | **Binary / Bundle Size** | ~150 MB – 250 MB per installer | **~12.8 MB** (NSIS installer) | **~95% smaller** |
 | **Cold Start Time** | ~2.5 – 4.0 seconds | **< 350 ms** | **~10× faster startup** |
-| **Telemetry & Privacy** | Always-on vendor telemetry & ping servers | **100% offline & private** by default | Zero tracking, no accounts |
+| **Telemetry & Tracking** | Always-on background vendor telemetry & analytics servers | **Privacy-first / No user tracking** · Anonymous open-beta hardware compatibility reports (toggleable) | Zero personal data, no accounts |
 
 ### Subsystem Latency & Throughput (Release Benchmarks)
 
@@ -111,11 +111,11 @@ Measured on Windows 11 x64 (AMD Ryzen / Intel Core):
 ## Open beta
 
 Havit Console is in open beta. The KB884L and Fuxi-H7 are verified on real hardware; every
-other Havit device is only detected. The onboarding wizard asks whether to **share
-compatibility reports**; with that on, the app files a GitHub issue when it detects an untested
-Havit device or a device command fails (USB IDs, firmware and app versions, the packet log;
-never names or serial numbers). With it off, **Devices → Report compatibility…** opens a
-prefilled issue draft you submit yourself. Details: [`docs/compatibility-reports.md`](docs/compatibility-reports.md).
+other Havit device is only detected. During the open beta, **share compatibility reports** is enabled
+to help catalog untested Havit models and driver errors (sending only USB VID/PID, firmware version,
+and sanitized driver error logs; never personal names, file paths, or serial numbers). It can be
+turned off at any time during onboarding or in **Updates → Settings**. You can also manually review
+and submit reports via **Report compatibility…**. Details: [`docs/compatibility-reports.md`](docs/compatibility-reports.md).
 
 ## Install
 

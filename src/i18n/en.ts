@@ -81,7 +81,7 @@ export const en = {
     "Open beta: the KB884L and Fuxi-H7 are verified; other Havit devices are detected so you can report how they behave.",
   "onboarding.welcome.point2": "Open source; all code is on GitHub.",
   "onboarding.welcome.point3":
-    "No account, no telemetry — unless you turn on compatibility reports in the last step.",
+    "No account, no personal tracking; open beta device compatibility reports can be turned off in the last step or in Settings.",
   "onboarding.welcome.point4": "Not affiliated with Havit; an independent community project.",
   "onboarding.found.title": "Devices found",
   "onboarding.looking.title": "Looking for devices",

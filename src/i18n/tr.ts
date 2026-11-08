@@ -73,7 +73,7 @@ export const tr: Record<MessageKey, string> = {
     "Açık beta: KB884L ve Fuxi-H7 doğrulandı; diğer Havit cihazları algılanır, nasıl davrandıklarını bildirebilirsin.",
   "onboarding.welcome.point2": "Açık kaynak; kodun tamamı GitHub’da.",
   "onboarding.welcome.point3":
-    "Hesap yok, telemetri yok — son adımda uyumluluk raporlarını açmadığın sürece.",
+    "Hesap yok, kişisel takip yok; açık beta cihaz uyumluluk raporları son adımda veya ayarlardan kapatılabilir.",
   "onboarding.welcome.point4": "Havit ile bağlantılı değildir; bağımsız bir topluluk projesidir.",
   "onboarding.found.title": "Cihazlar bulundu",
   "onboarding.looking.title": "Cihazlar aranıyor",
