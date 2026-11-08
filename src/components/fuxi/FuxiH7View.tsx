@@ -78,9 +78,9 @@ export const FuxiH7View: React.FC<FuxiH7ViewProps> = ({ connected }) => {
   return (
     <>
       {!connected && (
-        <Notice tone="warning" title="Fuxi-H7 algılanamadı">
-          Test modundasın. USB alıcısını ya da kabloyu takıp “Cihazları tara”ya
-          bas.
+        <Notice tone="warning" title="Fuxi-H7 not detected">
+          You’re in preview mode. Plug in the USB receiver or cable and choose
+          “Scan devices”.
         </Notice>
       )}
 

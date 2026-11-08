@@ -1,74 +1,78 @@
-# 🤝 Havit Console'a Katkıda Bulunma Rehberi
+# Contributing to Havit Console
 
-Havit Console açık kaynaklı bir topluluk projesidir. Yeni Havit çevre birimleri eklemek, hata bildirmek veya arayüzü geliştirmek isteyen herkesin katkılarına açığız!
+Havit Console is a community project. Bug reports, new device support and UI improvements
+are welcome.
 
 ---
 
-## 🏗️ Mimari Yapı
+## Architecture
 
-Proje iki ana katmandan oluşur:
+Two layers:
 
-1. **Rust Çekirdeği (`src-tauri/src/`):**
-   - `transport/hid.rs`: USB HID cihazları ile iletişim (Feature Reports, Output Reports, Overlapped I/O).
-   - `device_registry.rs`: Bağlı USB aygıtlarının tespiti ve yetenek haritası.
-   - `devices/`: Cihazlara özel protokol sürücüleri (`kb884l`, `fuxi_h7`).
-   - `packet_log.rs`: Geliştirici hata ayıklama ve canlı HID paket kayıt sistemi.
-   - `profiles.rs`: Kullanıcı yapılandırmalarının yerel JSON saklama motoru.
-2. **Kullanıcı Arayüzü (`src/`):**
+1. **Rust core (`src-tauri/src/`)**
+   - `transport/hid.rs`: USB HID I/O (feature reports, output reports, long-timeout
+     overlapped writes).
+   - `device_registry.rs`: detection of connected devices and their capabilities.
+   - `devices/`: per-device protocol drivers (`kb884l`, `fuxi_h7`) and last-known state.
+   - `packet_log.rs`: live packet log shown on the Diagnostics page.
+   - `profiles.rs`: local JSON storage for profiles.
+2. **UI (`src/`)**
    - React 19 + TypeScript + Tailwind CSS v4.
-   - Modüler bileşenler (`components/kb884l`, `components/fuxi`, `components/profiles`, `components/diagnostics`).
+   - `components/ui.tsx` holds the shared controls (sections, rows, switch, select, …);
+     device pages live in `components/kb884l`, `components/fuxi`; shared device settings
+     and profile capture/apply live in `state/DeviceSettings.tsx`.
+
+The protocol documentation is in `docs/protocols/`.
 
 ---
 
-## 🔌 Yeni Bir Havit Cihazı Nasıl Eklenir?
+## Adding a Havit device
 
-`docs/ECOSYSTEM_FAMILIES.md` dosyasında listelendiği gibi, Havit çevre birimleri 4 ana OEM ailesine dayanmaktadır:
+Havit peripherals come from a few OEM families (see `docs/ECOSYSTEM_FAMILIES.md`):
 
-1. **Rongyuan / HFD Ailesi (Klavyeler):** `0xFF13` Feature report transaction lifecycle kullanır.
-2. **XiiSound Ailesi (Kulaklıklar):** Windows CoreAudio + `0xF100` dongle HID linki kullanır.
-3. **QMK / VIA Ailesi:** Açık standart raw HID (`0xFF60`) protokolü kullanır.
-4. **Houyi / VS Ailesi (Fareler):** 64-baytlık sensör ve DPI paketleri kullanır.
+1. **Rongyuan / HFD (keyboards):** `0xFF13` feature-report transactions.
+2. **XiiSound (headsets):** Windows CoreAudio plus the `0xF100` dongle HID link.
+3. **QMK / VIA:** standard raw HID (`0xFF60`).
+4. **Houyi / VS (mice):** 64-byte sensor and DPI packets.
 
-### Adım Adım Cihaz Ekleme:
+Steps:
 
-1. **VID / PID Tespiti:**
-   Cihazınızı bilgisayara takın ve PowerShell üzerinden VID/PID değerlerini öğrenin:
+1. **Find the VID/PID.** Plug the device in and list it:
    ```powershell
    Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -like "*VID_*" }
    ```
+2. **Analyze the protocol.** Decompile the vendor software (`morluto/rea` + Ghidra) and
+   derive the report ids and packet layouts. Write them down in `docs/protocols/<device>.md`;
+   the existing files show the expected level of detail. Never commit vendor binaries.
+3. **Register the device** in `discover_havit_devices()`
+   (`src-tauri/src/device_registry.rs`): VID/PID, usage pages and `DeviceCapabilities`.
+4. **Write the driver** in `src-tauri/src/devices/<device>/` and expose Tauri commands in
+   `src-tauri/src/lib.rs`. Run slow or HID work through `off_ui_thread`.
+5. **Build the page** in `src/components/<device>/`, add the view to `src/App.tsx` and the
+   sidebar, and extend `state/DeviceSettings.tsx` if the device should support profiles.
 
-2. **Protokol Analizi:**
-   Resmi üretici yazılımını `morluto/rea` ve Ghidra ile inceleyerek HID rapor kimliklerini (Report ID) ve paket formatını belirleyin.
-
-3. **Cihaz Kaydının Eklenmesi (`src-tauri/src/device_registry.rs`):**
-   `discover_havit_devices()` fonksiyonuna yeni cihazınızın VID/PID ve yetenek (`DeviceCapabilities`) tanımını ekleyin.
-
-4. **Sürücü Modülü (`src-tauri/src/devices/<cihaz_adi>/`):**
-   Gereken donanım komutlarını (RGB aydınlatma, DPI, tuş haritası vb.) yazın.
-
-5. **Arayüz Bileşeni (`src/components/<cihaz_adi>/`):**
-   Kullanıcının donanımı yönetebileceği React bileşenini tasarlayın ve `src/App.tsx` içine sekmeyi ekleyin.
+Test on real hardware before opening a pull request, and include what you observed.
 
 ---
 
-## 🧪 Test ve Doğrulama
+## Checks
 
-Değişikliklerinizi göndermeden önce mutlaka derleme ve testleri çalıştırın:
+Run these before pushing; CI runs the same set:
 
 ```bash
-# Frontend derleme kontrolü
+npx tsc --noEmit -p .
 npm run build
-
-# Rust çekirdek derleme ve test kontrolü
-cd src-tauri
-cargo check
-cargo test
+cd src-tauri && cargo check --locked && cargo test --locked
 ```
 
 ---
 
-## 📜 Çekme İstekleri (Pull Request)
+## Commits and pull requests
 
-1. Depoyu forklayın ve yeni bir dal (branch) açın: `git checkout -b feature/yeni-cihaz`
-2. Anlaşılır commit mesajları kullanın.
-3. PR açıklamasında test ettiğiniz fiziksel cihaz modelini ve çalışma kanıtını (ekran görüntüsü veya HID log) belirtin.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
+  `feat:` (minor), `fix:` (patch), `feat!:` / `BREAKING CHANGE:` (major). release-please
+  turns them into the version number and the changelog, so the type matters.
+- Code, comments, documentation and UI text are in English.
+- Fork, branch (`git checkout -b feat/<device>`), open a pull request against `main`.
+  Mention the device model you tested with and attach evidence (screenshot or a
+  Diagnostics log excerpt).

@@ -116,7 +116,7 @@ export type RoomSize = "small" | "medium" | "large";
 export interface HeadsetDsp {
   bands: number[]; // 10 bands, -20..20 dB
   preamp: number;
-  preset: string; // EQ preset name, "Özel" when bands were edited
+  preset: string; // EQ preset name, "Custom" when bands were edited
   surround71: boolean;
   roomSize: RoomSize;
   enc: boolean;

@@ -5,30 +5,30 @@ import { ActionRow, Button, Row, Section, Segmented, Select, Slider, Switch, cx,
 // Mode ids as DeviceDriver.exe lists them (0x439a50). 20 (per-key custom) needs per-key data
 // and is not offered here.
 const LIGHTING_MODES = [
-  { id: 1, name: "Sabit" },
-  { id: 7, name: "Nefes" },
-  { id: 6, name: "Renkli" },
-  { id: 8, name: "Spektrum" },
-  { id: 15, name: "Dalgacık" },
-  { id: 2, name: "Basınca yanar" },
-  { id: 3, name: "Basınca söner" },
-  { id: 4, name: "Parıltı" },
-  { id: 5, name: "Düşen" },
-  { id: 9, name: "Dışa doğru" },
-  { id: 10, name: "Kayan" },
-  { id: 11, name: "Yuvarlanan" },
-  { id: 12, name: "Dönen" },
-  { id: 13, name: "Patlama" },
-  { id: 14, name: "Fırlatma" },
-  { id: 16, name: "Akış" },
-  { id: 17, name: "Nabız" },
-  { id: 18, name: "Eğim" },
-  { id: 19, name: "Mekik" },
-  { id: 0, name: "Işıklar kapalı" },
+  { id: 1, name: "Static" },
+  { id: 7, name: "Breath" },
+  { id: 6, name: "Colourful" },
+  { id: 8, name: "Spectrum" },
+  { id: 15, name: "Ripples" },
+  { id: 2, name: "Single On" },
+  { id: 3, name: "Single Off" },
+  { id: 4, name: "Glittering" },
+  { id: 5, name: "Falling" },
+  { id: 9, name: "Outward" },
+  { id: 10, name: "Scrolling" },
+  { id: 11, name: "Rolling" },
+  { id: 12, name: "Rotating" },
+  { id: 13, name: "Explode" },
+  { id: 14, name: "Launch" },
+  { id: 16, name: "Flowing" },
+  { id: 17, name: "Pulsating" },
+  { id: 18, name: "Tilt" },
+  { id: 19, name: "Shuttle" },
+  { id: 0, name: "LED Off" },
 ];
 
 export const lightingModeName = (id: number) =>
-  LIGHTING_MODES.find((m) => m.id === id)?.name ?? `Efekt ${id}`;
+  LIGHTING_MODES.find((m) => m.id === id)?.name ?? `Effect ${id}`;
 
 /** Modes that draw their own colors, so the preset color is ignored. */
 const NO_COLOR_MODES = new Set([0, 6, 8]);
@@ -45,15 +45,15 @@ const DIRECTION_VALUES: Record<number, [number, number]> = {
 const defaultDirection = (mode: number) => DIRECTION_VALUES[mode]?.[0] ?? 0;
 
 const PRESET_COLORS = [
-  { name: "Turuncu", r: 255, g: 146, b: 48, hex: "#ff9230" },
-  { name: "Kırmızı", r: 255, g: 69, b: 58, hex: "#ff453a" },
-  { name: "Sarı", r: 255, g: 214, b: 10, hex: "#ffd60a" },
-  { name: "Yeşil", r: 48, g: 209, b: 88, hex: "#30d158" },
-  { name: "Camgöbeği", r: 100, g: 210, b: 255, hex: "#64d2ff" },
-  { name: "Mavi", r: 10, g: 132, b: 255, hex: "#0a84ff" },
-  { name: "Mor", r: 191, g: 90, b: 242, hex: "#bf5af2" },
-  { name: "Pembe", r: 255, g: 55, b: 95, hex: "#ff375f" },
-  { name: "Beyaz", r: 242, g: 242, b: 247, hex: "#f2f2f7" },
+  { name: "Orange", r: 255, g: 146, b: 48, hex: "#ff9230" },
+  { name: "Red", r: 255, g: 69, b: 58, hex: "#ff453a" },
+  { name: "Yellow", r: 255, g: 214, b: 10, hex: "#ffd60a" },
+  { name: "Green", r: 48, g: 209, b: 88, hex: "#30d158" },
+  { name: "Cyan", r: 100, g: 210, b: 255, hex: "#64d2ff" },
+  { name: "Blue", r: 10, g: 132, b: 255, hex: "#0a84ff" },
+  { name: "Purple", r: 191, g: 90, b: 242, hex: "#bf5af2" },
+  { name: "Pink", r: 255, g: 55, b: 95, hex: "#ff375f" },
+  { name: "White", r: 242, g: 242, b: 247, hex: "#f2f2f7" },
 ];
 
 interface LightingPanelProps {
@@ -90,13 +90,13 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
 
   return (
     <Section
-      title="Aydınlatma"
-      footer={`Uygulanan ayarlar klavyenin belleğine kaydedilir; kablo çıkarılsa da korunur.${note ? ` ${note}` : ""}`}
+      title="Lighting"
+      footer={`Applied settings are stored in the keyboard’s memory and survive unplugging.${note ? ` ${note}` : ""}`}
     >
       {!NO_COLOR_MODES.has(config.mode) && (
-        <Row label="Rastgele renkler" description="Seçili renk yerine klavye renkleri kendisi seçer">
+        <Row label="Random colors" description="The keyboard picks colors instead of the one selected here">
           <Switch
-            label="Rastgele renkler"
+            label="Random colors"
             checked={config.random_color}
             onChange={(random_color) => onChange({ ...config, random_color })}
           />
@@ -104,7 +104,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {!NO_COLOR_MODES.has(config.mode) && !config.random_color && (
-      <Row label="Renk" description={currentHex.toUpperCase()}>
+      <Row label="Color" description={currentHex.toUpperCase()}>
         <div className="flex flex-wrap items-center gap-1.5">
           {PRESET_COLORS.map((col) => {
             const on = config.r === col.r && config.g === col.g && config.b === col.b;
@@ -127,7 +127,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
             );
           })}
           <label className="ml-1.5 flex items-center">
-            <span className="sr-only">Özel renk seç</span>
+            <span className="sr-only">Choose a custom color</span>
             <input
               type="color"
               value={currentHex}
@@ -139,7 +139,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       </Row>
       )}
 
-      <Row label="Efekt" htmlFor="kb-mode">
+      <Row label="Effect" htmlFor="kb-mode">
         <Select
           id="kb-mode"
           value={config.mode}
@@ -150,7 +150,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       </Row>
 
       {config.mode !== 0 && (
-      <Row label="Parlaklık" htmlFor="kb-bright">
+      <Row label="Brightness" htmlFor="kb-bright">
         <Slider
           id="kb-bright"
           min={1}
@@ -163,7 +163,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {config.mode !== 0 && config.mode !== 1 && (
-      <Row label="Efekt hızı" htmlFor="kb-speed">
+      <Row label="Effect speed" htmlFor="kb-speed">
         <Slider
           id="kb-speed"
           min={1}
@@ -176,12 +176,12 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
       )}
 
       {direction && (
-        <Row label="Yön">
+        <Row label="Direction">
           <Segmented
-            label="Efekt yönü"
+            label="Effect direction"
             options={[
               { id: String(direction[0]), label: "Normal" },
-              { id: String(direction[1]), label: "Ters" },
+              { id: String(direction[1]), label: "Reversed" },
             ]}
             value={String(config.direction)}
             onChange={(v) => onChange({ ...config, direction: Number(v) })}
@@ -191,7 +191,7 @@ export const LightingPanel: React.FC<LightingPanelProps> = ({
 
       <ActionRow status={statusMessage}>
         <Button variant="primary" onClick={onApply} disabled={applying}>
-          {applying ? "Gönderiliyor…" : "Klavyeye uygula"}
+          {applying ? "Applying…" : "Apply to keyboard"}
         </Button>
       </ActionRow>
     </Section>

@@ -50,7 +50,7 @@ export const DEFAULT_SETTINGS: Kb884lSettingsConfig = {
 export const DEFAULT_DSP: HeadsetDsp = {
   bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   preamp: 0,
-  preset: "Varsayılan",
+  preset: "Default",
   surround71: true,
   roomSize: "medium",
   enc: true,
@@ -117,18 +117,18 @@ const hex = (c: Kb884lLightingConfig) =>
 /** One-line summary for profile lists. */
 export function describeProfile(profile: SavedProfile): string {
   const data = parseProfileData(profile);
-  if (!data) return "Ayar içermiyor (eski biçim)";
+  if (!data) return "No settings (old format)";
   if (data.kind === "kb884l") {
     const l = data.lighting;
-    const color = l.mode === 0 ? null : l.random_color ? "rastgele renk" : hex(l);
-    return [lightingModeName(l.mode), color, `parlaklık ${l.brightness}`].filter(Boolean).join(" · ");
+    const color = l.mode === 0 ? null : l.random_color ? "random colors" : hex(l);
+    return [lightingModeName(l.mode), color, `brightness ${l.brightness}`].filter(Boolean).join(" · ");
   }
   const { dsp, audio } = data;
   return [
     `EQ ${dsp.preset}`,
-    dsp.surround71 ? "7.1 açık" : "7.1 kapalı",
-    `ses %${audio.speaker_volume}`,
-    `mikrofon %${audio.mic_volume}`,
+    dsp.surround71 ? "7.1 on" : "7.1 off",
+    `volume ${audio.speaker_volume}%`,
+    `mic ${audio.mic_volume}%`,
   ].join(" · ");
 }
 
@@ -199,7 +199,7 @@ export const DeviceSettingsProvider: React.FC<{ children: React.ReactNode }> = (
   const applyProfile = useCallback(
     async (profile: SavedProfile): Promise<string> => {
       const data = parseProfileData(profile);
-      if (!data) throw new Error("Bu profil eski biçimde; içinde ayar yok.");
+      if (!data) throw new Error("This profile uses an old format and holds no settings.");
       if (data.kind === "kb884l") {
         // Update the UI first so the page reflects the profile even if the write fails.
         setLighting(data.lighting);
@@ -208,19 +208,19 @@ export const DeviceSettingsProvider: React.FC<{ children: React.ReactNode }> = (
         setLightingSource("app");
         await applyKb884lSettings(data.settings);
         setSettingsSource("app");
-        return "Profil klavyeye uygulandı.";
+        return "Profile applied to the keyboard.";
       }
       setDsp(data.dsp);
       const st = await fetchFuxiStatus();
       if (!st.speaker_found && !st.mic_found) {
-        throw new Error("Kulaklık ses aygıtı bulunamadı; yalnızca ekolayzer ve efekt ayarları yüklendi.");
+        throw new Error("Headset audio device not found; only equalizer and effect settings were loaded.");
       }
       if (st.speaker_found) {
         await setFuxiSpeaker(data.audio.speaker_volume, st.speaker_muted);
         await setFuxiBalance(data.audio.left_balance, data.audio.right_balance);
       }
       if (st.mic_found) await setFuxiMic(data.audio.mic_volume, st.mic_muted);
-      return "Profil kulaklığa uygulandı.";
+      return "Profile applied to the headset.";
     },
     [setDsp]
   );

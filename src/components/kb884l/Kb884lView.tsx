@@ -18,10 +18,10 @@ import {
 
 const sourceNote = (source: StateSource) =>
   source === "app"
-    ? "Bu uygulamadan en son uygulanan ayarlar gösteriliyor."
+    ? "Showing the settings last applied from this app."
     : source === "vendor"
-      ? "Havit uygulamasında kayıtlı ayarlar gösteriliyor."
-      : "Klavye ayarlarını geri okuyamıyor; varsayılanlar gösteriliyor.";
+      ? "Showing the settings stored by the Havit app."
+      : "The keyboard can’t report its settings; showing defaults.";
 import { Button, Notice, Row, Section, type StatusMessage } from "../ui";
 
 interface Kb884lViewProps {
@@ -69,7 +69,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
       setLightingMsg({ tone: "success", text: res });
       setTimeout(() => setLightingMsg(null), 4000);
     } catch (err) {
-      setLightingMsg({ tone: "error", text: `Uygulanamadı: ${err}` });
+      setLightingMsg({ tone: "error", text: `Couldn’t apply: ${err}` });
     } finally {
       setApplyingLighting(false);
     }
@@ -84,7 +84,7 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
       setSettingsMsg({ tone: "success", text: res });
       setTimeout(() => setSettingsMsg(null), 4000);
     } catch (err) {
-      setSettingsMsg({ tone: "error", text: `Kaydedilemedi: ${err}` });
+      setSettingsMsg({ tone: "error", text: `Couldn’t save: ${err}` });
     } finally {
       setSavingSettings(false);
     }
@@ -93,15 +93,15 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
   return (
     <>
       {!connected && (
-        <Notice tone="warning" title="KB884L algılanamadı">
-          Önizleme modundasın; değişiklikler klavyeye gönderilemez. USB
-          kablosunu takıp “Cihazları tara”ya bas.
+        <Notice tone="warning" title="KB884L not detected">
+          You’re in preview mode; changes can’t be sent to the keyboard. Plug in
+          the USB cable and choose “Scan devices”.
         </Notice>
       )}
 
       <ProfileQuickBar device="kb884l" connected={connected} />
 
-      <section aria-label="Klavye düzeni" className="flex flex-col gap-2">
+      <section aria-label="Keyboard layout" className="flex flex-col gap-2">
         <div className="rounded-[10px] border border-separator bg-card p-4">
           {layout ? (
             <KeyboardSvgLayout
@@ -115,31 +115,31 @@ export const Kb884lView: React.FC<Kb884lViewProps> = ({ connected }) => {
           ) : (
             <p role="status" className="m-0 py-16 text-center text-secondary">
               {layoutError
-                ? `Klavye düzeni yüklenemedi: ${layoutError}`
-                : "Klavye düzeni yükleniyor…"}
+                ? `Couldn’t load the keyboard layout: ${layoutError}`
+                : "Loading keyboard layout…"}
             </p>
           )}
         </div>
         <p className="m-0 px-1 text-[11px] leading-[14px] text-secondary">
-          Makro atamak için bir tuşa tıkla. Ekrandaki görüntü ve ışık rengi
-          aşağıdaki ayarları yansıtır.
+          Click a key to assign a macro. The screen image and lighting reflect
+          the settings below.
         </p>
       </section>
 
       <Section
-        title="Makro"
-        footer="Klavyeye kaydetme henüz desteklenmiyor; kayıt yalnızca bu uygulamada saklanır."
+        title="Macro"
+        footer="Saving to the keyboard isn’t supported yet; recordings stay in this app."
       >
         <Row
-          label={selectedKey ? `${selectedKey.label} tuşu` : "Tuş seçilmedi"}
+          label={selectedKey ? `${selectedKey.label} key` : "No key selected"}
           description={
             selectedKey
-              ? "Bu tuşa bir tuş dizisi kaydet"
-              : "Yukarıdaki klavye görselinden bir tuş seç"
+              ? "Record a key sequence for this key"
+              : "Select a key on the keyboard above"
           }
         >
           <Button onClick={() => setMacroOpen(true)} disabled={!selectedKey}>
-            Makro kaydet…
+            Record macro…
           </Button>
         </Row>
       </Section>

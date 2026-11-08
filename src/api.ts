@@ -24,7 +24,7 @@ const mockDevices: DetectedDeviceStatus[] = [
     name: "Havit KB884L RGB TFT Gaming Keyboard",
     category: "keyboard",
     connected: true,
-    connection_type: "USB kablolu",
+    connection_type: "USB wired",
     vid_hex: "0x05AC",
     pid_hex: "0x024F",
     firmware_version: "1.20",
@@ -48,7 +48,7 @@ const mockDevices: DetectedDeviceStatus[] = [
     name: "Havit Fuxi-H7 Quad-Mode Gaming Headset",
     category: "headset",
     connected: true,
-    connection_type: "2.4 GHz kablosuz alıcı",
+    connection_type: "2.4 GHz wireless receiver",
     vid_hex: "0x040B",
     pid_hex: "0x0897",
     firmware_version: "0.32",
@@ -346,12 +346,12 @@ export async function checkFirmwareUpdates(): Promise<FirmwareUpdateCheck> {
     updates: [
       {
         device_id: "kb884l",
-        device_name: "KB884L Klavye",
-        current_version: "önizleme-1.0",
-        version: "önizleme-1.1",
+        device_name: "KB884L Keyboard",
+        current_version: "preview-1.0",
+        version: "preview-1.1",
         size_bytes: 1_200_000,
-        released: "Önizleme",
-        notes: ["Önizleme modu: bu örnek bir sürüm notudur."],
+        released: "Preview",
+        notes: ["Preview mode: this is a sample release note."],
       },
     ],
   };
@@ -362,7 +362,7 @@ export async function installFirmwareUpdate(
   onProgress: (pct: number) => void
 ): Promise<void> {
   if (isTauri()) {
-    throw new Error(`${update.device_name} için firmware yükleme bu sürümde desteklenmiyor.`);
+    throw new Error(`Firmware installation for ${update.device_name} is not supported in this version.`);
   }
   for (let pct = 0; pct <= 100; pct += 4) {
     onProgress(pct);

@@ -287,9 +287,9 @@ export function Select<T extends string | number>({
           const t = typeahead.current;
           t.text = now - t.at < 600 ? t.text + e.key : e.key;
           t.at = now;
-          const needle = t.text.toLocaleLowerCase("tr");
+          const needle = t.text.toLocaleLowerCase();
           const hit = options.findIndex(
-            (o) => !o.disabled && o.label.toLocaleLowerCase("tr").startsWith(needle)
+            (o) => !o.disabled && o.label.toLocaleLowerCase().startsWith(needle)
           );
           if (hit >= 0) setActive(hit);
         }
@@ -456,7 +456,7 @@ export const StatusDot: React.FC<{ on: boolean }> = ({ on }) => (
 export const ConnectionLabel: React.FC<{ connected: boolean }> = ({ connected }) => (
   <span className="flex flex-none items-center gap-1.5 text-xs text-secondary">
     <StatusDot on={connected} />
-    {connected ? "Bağlı" : "Bağlı değil"}
+    {connected ? "Connected" : "Not connected"}
   </span>
 );
 

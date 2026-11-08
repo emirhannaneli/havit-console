@@ -77,9 +77,9 @@ pub fn discover_havit_devices() -> Vec<DetectedDeviceStatus> {
             category: DeviceCategory::Keyboard,
             connected: kb884l_connected,
             connection_type: if kb884l_connected {
-                "USB kablolu".to_string()
+                "USB wired".to_string()
             } else {
-                "Bağlı değil".to_string()
+                "Not connected".to_string()
             },
             vid_hex: "0x05AC".to_string(),
             pid_hex: "0x024F".to_string(),
@@ -108,9 +108,9 @@ pub fn discover_havit_devices() -> Vec<DetectedDeviceStatus> {
             category: DeviceCategory::Headset,
             connected: fuxi_connected,
             connection_type: if fuxi_connected {
-                "2.4 GHz kablosuz alıcı".to_string()
+                "2.4 GHz wireless receiver".to_string()
             } else {
-                "Bağlı değil".to_string()
+                "Not connected".to_string()
             },
             vid_hex: "0x040B".to_string(),
             pid_hex: "0x0897".to_string(),

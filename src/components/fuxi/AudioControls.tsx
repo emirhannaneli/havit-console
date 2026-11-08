@@ -7,9 +7,9 @@ import type { RoomSize } from "../../types";
 export type { RoomSize };
 
 const ROOMS: { id: RoomSize; label: string }[] = [
-  { id: "small", label: "Küçük oda" },
-  { id: "medium", label: "Salon" },
-  { id: "large", label: "Konser salonu" },
+  { id: "small", label: "Small room" },
+  { id: "medium", label: "Living room" },
+  { id: "large", label: "Concert hall" },
 ];
 
 /**
@@ -48,14 +48,14 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
   );
   return (
     <Section
-      title="Ses"
+      title="Sound"
       footer={
         status.speaker_found
-          ? `Çıkış aygıtı: ${status.speaker_name}`
-          : "Ses aygıtı bekleniyor. Kulaklığın USB alıcısının takılı olduğundan emin ol."
+          ? `Output device: ${status.speaker_name}`
+          : "Waiting for the audio device. Make sure the headset’s USB receiver is plugged in."
       }
     >
-      <Row label="Ses düzeyi" htmlFor="fx-vol">
+      <Row label="Volume" htmlFor="fx-vol">
         <span className="flex items-center gap-2">
           <Volume1 aria-hidden="true" className="h-3.5 w-3.5 text-secondary" />
           <Slider
@@ -68,33 +68,33 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
               onVolumeChange(Number(e.target.value), status.speaker_muted)
             }
             valueText={
-              status.speaker_muted ? "Sessiz" : `%${status.speaker_volume}`
+              status.speaker_muted ? "Muted" : `${status.speaker_volume}%`
             }
           />
         </span>
       </Row>
 
-      <Row label="Sesi kapat">
+      <Row label="Mute">
         <Switch
-          label="Sesi kapat"
+          label="Mute"
           checked={status.speaker_muted}
           onChange={(muted) => onVolumeChange(status.speaker_volume, muted)}
         />
       </Row>
 
       <Row
-        label="Kanal dengesi"
+        label="Balance"
         description={
           balancePos === 50
-            ? "Ortada"
+            ? "Centered"
             : balancePos < 50
-              ? `Sola kaydırıldı · sağ kulak %${status.right_balance}`
-              : `Sağa kaydırıldı · sol kulak %${status.left_balance}`
+              ? `Shifted left · right ear ${status.right_balance}%`
+              : `Shifted right · left ear ${status.left_balance}%`
         }
         htmlFor="fx-bal"
       >
         <span className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-secondary">Sol</span>
+          <span className="text-xs text-secondary">L</span>
           <input
             id="fx-bal"
             type="range"
@@ -107,23 +107,23 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
             }}
             className="h-6 w-[220px] max-w-[50vw]"
           />
-          <span className="text-xs text-secondary">Sağ</span>
+          <span className="text-xs text-secondary">R</span>
           <Button
             onClick={() => onBalanceChange(100, 100)}
             disabled={balancePos === 50}
           >
-            Ortala
+            Center
           </Button>
         </span>
       </Row>
 
       <Row
-        label="7.1 sanal surround"
-        description="Oyunlarda yön algısını artırır; müzikte kapalı tutman önerilir"
+        label="7.1 virtual surround"
+        description="Improves directional cues in games; keep it off for music"
         strong
       >
         <Switch
-          label="7.1 sanal surround"
+          label="7.1 virtual surround"
           checked={surround71}
           onChange={onSurroundChange}
         />
@@ -131,11 +131,11 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
 
       {surround71 && (
         <Row
-          label="Oda büyüklüğü"
-          description="Surround yankısının ne kadar geniş duyulacağı"
+          label="Room size"
+          description="How wide the surround reverb sounds"
         >
           <Segmented
-            label="Oda büyüklüğü"
+            label="Room size"
             options={ROOMS}
             value={roomSize}
             onChange={onRoomSizeChange}

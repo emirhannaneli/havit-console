@@ -46,8 +46,8 @@ const SidebarItem: React.FC<{
 );
 
 const DEVICE_ITEMS: { id: View & ("kb884l" | "fuxi-h7"); label: string; icon: React.ElementType }[] = [
-  { id: "kb884l", label: "KB884L Klavye", icon: Keyboard },
-  { id: "fuxi-h7", label: "Fuxi-H7 Kulaklık", icon: Headphones },
+  { id: "kb884l", label: "KB884L Keyboard", icon: Keyboard },
+  { id: "fuxi-h7", label: "Fuxi-H7 Headset", icon: Headphones },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, updateCount }) => (
@@ -56,41 +56,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
       Havit Console
     </div>
 
-    <nav aria-label="Kenar çubuğu" className="flex flex-col gap-0.5 px-2.5 pb-4">
+    <nav aria-label="Sidebar" className="flex flex-col gap-0.5 px-2.5 pb-4">
       <SidebarItem
         icon={LayoutGrid}
-        label="Cihazlar"
+        label="Devices"
         active={view === "devices"}
         onClick={() => onNavigate("devices")}
       />
       <SidebarItem
         icon={Layers}
-        label="Profiller"
+        label="Profiles"
         active={view === "profiles"}
         onClick={() => onNavigate("profiles")}
       />
       <SidebarItem
         icon={Download}
-        label="Güncellemeler"
+        label="Updates"
         active={view === "updates"}
         onClick={() => onNavigate("updates")}
         trailing={
           updateCount > 0 ? (
             <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent">
               {updateCount}
-              <span className="sr-only"> güncelleme hazır</span>
+              <span className="sr-only"> updates available</span>
             </span>
           ) : undefined
         }
       />
       <SidebarItem
         icon={Terminal}
-        label="Tanılama"
+        label="Diagnostics"
         active={view === "diagnostics"}
         onClick={() => onNavigate("diagnostics")}
       />
 
-      <span className="px-2 pt-3.5 pb-1.5 text-[11px] font-semibold text-secondary">Cihazlar</span>
+      <span className="px-2 pt-3.5 pb-1.5 text-[11px] font-semibold text-secondary">Devices</span>
       {DEVICE_ITEMS.map((item) => {
         const connected = devices.find((d) => d.id === item.id)?.connected ?? false;
         return (
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
             trailing={
               <>
                 <StatusDot on={connected} />
-                <span className="sr-only">{connected ? "Bağlı" : "Bağlı değil"}</span>
+                <span className="sr-only">{connected ? "Connected" : "Not connected"}</span>
               </>
             }
           />
@@ -113,10 +113,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ view, onNavigate, devices, upd
 
     <footer className="mt-auto flex h-11 flex-none items-center border-t border-separator px-3">
       <span className="w-8" aria-hidden="true" />
-      <span className="flex-1 text-center text-[11px] text-secondary tabular-nums">Sürüm {appVersion}</span>
+      <span className="flex-1 text-center text-[11px] text-secondary tabular-nums">Version {appVersion}</span>
       <button
         type="button"
-        aria-label="GitHub deposunu aç"
+        aria-label="Open the GitHub repository"
         title="GitHub"
         onClick={() => openExternal(REPO_URL)}
         className="flex h-8 w-8 items-center justify-center rounded-md border-0 bg-transparent text-secondary hover:bg-fill-hover hover:text-label"

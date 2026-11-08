@@ -7,7 +7,7 @@ import { Button, cx, Sheet } from "../ui";
 type Phase = "confirm" | "progress" | "done" | "error";
 
 const formatSize = (bytes: number) =>
-  `${(bytes / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB`;
+  `${(bytes / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })} MB`;
 
 export const FirmwareDialog: React.FC<{
   update: FirmwareUpdate | null;
@@ -53,22 +53,22 @@ export const FirmwareDialog: React.FC<{
 
   const text: Record<Phase, [string, string]> = {
     confirm: [
-      `${update.device_name} firmware’i güncellensin mi?`,
-      "Güncelleme sırasında cihaz yaklaşık 1 dakika yanıt vermez. İşlem bitince cihaz kendini yeniden başlatır.",
+      `Update ${update.device_name} firmware?`,
+      "The device stops responding for about a minute during the update, then restarts on its own.",
     ],
     progress: [
-      "Firmware yükleniyor…",
-      "Cihazı çıkarma ve bilgisayarı uyutma. Yarıda kalırsa buradan tekrar denenebilir.",
+      "Installing firmware…",
+      "Don’t unplug the device or put the computer to sleep. If it’s interrupted, you can retry from here.",
     ],
-    done: ["Güncelleme tamamlandı", `${update.device_name} artık ${update.version} sürümünde.`],
+    done: ["Update complete", `${update.device_name} is now on version ${update.version}.`],
     error: [
-      "Güncelleme tamamlanamadı",
-      "Cihaz güncellenmedi. Cihazı çıkarmadan “Yeniden dene”ye bas veya günlüğü kopyalayıp sorunu bildir.",
+      "Update failed",
+      "The device was not updated. Keep it plugged in and choose “Try again”, or copy the log and report the problem.",
     ],
   };
 
   const stage =
-    pct < 20 ? "Paket doğrulanıyor" : pct < 90 ? "Bellek blokları yazılıyor" : "Doğrulanıyor ve yeniden başlatılıyor";
+    pct < 20 ? "Verifying package" : pct < 90 ? "Writing memory blocks" : "Verifying and restarting";
 
   const iconBg = phase === "done" ? "bg-success-dot" : phase === "error" ? "bg-danger" : "bg-accent";
   const Icon = phase === "done" ? Check : phase === "error" ? AlertCircle : phase === "progress" ? Keyboard : Download;
@@ -100,13 +100,13 @@ export const FirmwareDialog: React.FC<{
 
         {phase === "confirm" && (
           <dl className="m-0 ml-[72px] grid grid-cols-[60px_1fr] gap-x-2 gap-y-1.5 text-xs leading-[15px]">
-            <dt className="text-tertiary">Cihaz</dt>
+            <dt className="text-tertiary">Device</dt>
             <dd className="m-0">{update.device_name}</dd>
-            <dt className="text-tertiary">Sürüm</dt>
+            <dt className="text-tertiary">Version</dt>
             <dd className="m-0">
-              {update.current_version ?? "Bilinmiyor"} → {update.version}
+              {update.current_version ?? "Unknown"} → {update.version}
             </dd>
-            <dt className="text-tertiary">Boyut</dt>
+            <dt className="text-tertiary">Size</dt>
             <dd className="m-0">{formatSize(update.size_bytes)}</dd>
           </dl>
         )}
@@ -115,7 +115,7 @@ export const FirmwareDialog: React.FC<{
           <div className="ml-[72px] flex flex-col gap-2">
             <div
               role="progressbar"
-              aria-label="Firmware yazılıyor"
+              aria-label="Writing firmware"
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={pct}
@@ -139,9 +139,9 @@ export const FirmwareDialog: React.FC<{
         <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
           {phase === "confirm" && (
             <>
-              <Button onClick={onClose}>Vazgeç</Button>
+              <Button onClick={onClose}>Cancel</Button>
               <Button variant="primary" className="min-w-[90px]" onClick={start} autoFocus>
-                Güncelle
+                Update
               </Button>
             </>
           )}
@@ -149,22 +149,22 @@ export const FirmwareDialog: React.FC<{
             <>
               <span className="mr-auto flex items-center gap-1.5 text-xs text-warning">
                 <AlertTriangle aria-hidden="true" className="h-[13px] w-[13px]" />
-                Cihazı çıkarma
+                Don’t unplug the device
               </span>
-              <Button disabled>Vazgeç</Button>
+              <Button disabled>Cancel</Button>
             </>
           )}
           {phase === "done" && (
             <Button variant="primary" className="min-w-[90px]" onClick={onClose} autoFocus>
-              Kapat
+              Close
             </Button>
           )}
           {phase === "error" && (
             <>
               <Button className="mr-auto" onClick={copyLog}>
-                {copied ? "Kopyalandı" : "Günlüğü kopyala"}
+                {copied ? "Copied" : "Copy log"}
               </Button>
-              <Button onClick={onClose}>Kapat</Button>
+              <Button onClick={onClose}>Close</Button>
               <Button variant="primary" className="min-w-[90px]" onClick={start} autoFocus>
                 Yeniden dene
               </Button>

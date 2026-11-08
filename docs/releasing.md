@@ -18,8 +18,7 @@ Everything runs on GitHub: `emirhannaneli/havit-console`.
    installer, the `.sig` and `latest.json` to that release.
 5. Installed apps read
    `https://github.com/emirhannaneli/havit-console/releases/latest/download/latest.json`
-   on launch (when "Güncellemeleri otomatik denetle" is on) and from the Güncellemeler
-   page, download the signed installer, run it passively and relaunch.
+   on launch (when automatic update checks are enabled) and from the Updates page, download the signed installer, run it passively and relaunch.
 
 ## Secrets and settings (one time)
 

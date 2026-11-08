@@ -25,8 +25,8 @@ interface ProfilesViewProps {
 }
 
 const DEVICE_LABEL: Record<DeviceId, string> = {
-  kb884l: "KB884L Klavye",
-  "fuxi-h7": "Fuxi-H7 Kulaklık",
+  kb884l: "KB884L Keyboard",
+  "fuxi-h7": "Fuxi-H7 Headset",
 };
 
 const isDeviceId = (v: unknown): v is DeviceId => v === "kb884l" || v === "fuxi-h7";
@@ -78,10 +78,10 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       });
       setNewName("");
       setCreating(false);
-      flash({ tone: "success", text: `“${name}” kaydedildi.` });
+      flash({ tone: "success", text: `“${name}” saved.` });
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `Profil kaydedilemedi: ${err}` });
+      flash({ tone: "error", text: `Couldn’t save the profile: ${err}` });
     }
   };
 
@@ -91,19 +91,19 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
     try {
       flash({ tone: "success", text: `“${profile.name}”: ${await applyProfile(profile)}` });
     } catch (err) {
-      flash({ tone: "error", text: `“${profile.name}” uygulanamadı: ${err}` });
+      flash({ tone: "error", text: `Couldn’t apply “${profile.name}”: ${err}` });
     } finally {
       setBusyId(null);
     }
   };
 
   const handleDelete = async (profile: SavedProfile) => {
-    if (!confirm(`“${profile.name}” profili kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`)) return;
+    if (!confirm(`Delete the profile “${profile.name}” permanently? This can’t be undone.`)) return;
     try {
       await deleteProfileFromStorage(profile.id);
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `Silinemedi: ${err}` });
+      flash({ tone: "error", text: `Couldn’t delete: ${err}` });
     }
   };
 
@@ -124,22 +124,22 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
     try {
       const raw = JSON.parse(await file.text()) as Partial<SavedProfile>;
       if (!isDeviceId(raw.device_id) || typeof raw.name !== "string") {
-        throw new Error("Dosya bir Havit Console profili değil.");
+        throw new Error("The file is not a Havit Console profile.");
       }
       const candidate: SavedProfile = {
         id: `${raw.device_id}_${Date.now()}`,
-        name: raw.name.trim() || "İçe aktarılan profil",
+        name: raw.name.trim() || "Imported profile",
         device_id: raw.device_id,
         updated_at: new Date().toISOString(),
         data: (raw.data ?? {}) as SavedProfile["data"],
       };
       const data = parseProfileData(candidate);
-      if (!data) throw new Error("Dosyada geçerli cihaz ayarı yok.");
+      if (!data) throw new Error("The file holds no valid device settings.");
       await saveProfileToStorage({ ...candidate, data });
-      flash({ tone: "success", text: `“${candidate.name}” içe aktarıldı.` });
+      flash({ tone: "success", text: `“${candidate.name}” imported.` });
       await loadProfiles();
     } catch (err) {
-      flash({ tone: "error", text: `İçe aktarılamadı: ${err instanceof Error ? err.message : err}` });
+      flash({ tone: "error", text: `Couldn’t import: ${err instanceof Error ? err.message : err}` });
     }
   };
 
@@ -148,18 +148,18 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
   return (
     <>
       {loadError && (
-        <Notice tone="error" title="Profiller yüklenemedi">
+        <Notice tone="error" title="Couldn’t load profiles">
           {loadError}
         </Notice>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented
-          label="Cihaza göre filtrele"
+          label="Filter by device"
           options={[
-            { id: "all", label: `Tümü (${profiles.length})` },
-            { id: "kb884l", label: "Klavye" },
-            { id: "fuxi-h7", label: "Kulaklık" },
+            { id: "all", label: `All (${profiles.length})` },
+            { id: "kb884l", label: "Keyboard" },
+            { id: "fuxi-h7", label: "Headset" },
           ]}
           value={filter}
           onChange={setFilter}
@@ -176,12 +176,12 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
           />
           <Button onClick={() => importRef.current?.click()}>
             <Upload aria-hidden="true" className="h-4 w-4" />
-            İçe aktar…
+            Import…
           </Button>
           {!creating && (
             <Button variant="primary" onClick={() => setCreating(true)}>
               <Plus aria-hidden="true" className="h-4 w-4" />
-              Yeni profil
+              New profile
             </Button>
           )}
         </div>
@@ -190,13 +190,13 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       {creating && (
         <form onSubmit={handleCreate}>
           <Section
-            title="Yeni profil"
-            footer="Seçtiğin cihazın şu anki ayarları (klavyede ışık ve gelişmiş; kulaklıkta ekolayzer, ses, mikrofon) profile kaydedilir."
+            title="New profile"
+            footer="The selected device’s current settings are saved: lighting and advanced for the keyboard; equalizer, sound and microphone for the headset."
           >
-            <Row label="Ad" htmlFor="prof-name">
+            <Row label="Name" htmlFor="prof-name">
               <TextField
                 id="prof-name"
-                placeholder="Örn. Gece oyun"
+                placeholder="e.g. Night gaming"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 required
@@ -204,7 +204,7 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                 className="w-[240px] max-w-full"
               />
             </Row>
-            <Row label="Cihaz" htmlFor="prof-device">
+            <Row label="Device" htmlFor="prof-device">
               <Select<DeviceId>
                 id="prof-device"
                 value={newDevice}
@@ -217,9 +217,9 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
               />
             </Row>
             <ActionRow>
-              <Button onClick={() => setCreating(false)}>Vazgeç</Button>
+              <Button onClick={() => setCreating(false)}>Cancel</Button>
               <Button type="submit" variant="primary" disabled={!newName.trim()}>
-                Kaydet
+                Save
               </Button>
             </ActionRow>
           </Section>
@@ -229,21 +229,21 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
       {status && <Notice tone={status.tone} title={status.text} />}
 
       <Section
-        title="Kayıtlı profiller"
-        footer="Profiller bu bilgisayarda saklanır. “Uygula” ayarları cihaza yazar; cihaz bağlı değilse yalnızca uygulamadaki değerler değişir."
+        title="Saved profiles"
+        footer="Profiles are stored on this computer. “Apply” writes the settings to the device; if it’s not connected only the values in the app change."
       >
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-3.5 py-10 text-center">
             <Layers aria-hidden="true" className="h-7 w-7 text-tertiary" />
-            <span className="font-semibold">Henüz profil yok</span>
+            <span className="font-semibold">No profiles yet</span>
             <span className="text-xs text-secondary">
-              Cihaz sayfasında ayarlarını yap, sonra “Yeni profil” ile kaydet.
+              Adjust a device’s settings, then save them with “New profile”.
             </span>
           </div>
         ) : (
           filtered.map((prof) => {
             const Icon = prof.device_id === "kb884l" ? Keyboard : Headphones;
-            const date = new Date(prof.updated_at).toLocaleDateString("tr-TR", {
+            const date = new Date(prof.updated_at).toLocaleDateString(undefined, {
               day: "numeric",
               month: "short",
               hour: "2-digit",
@@ -266,13 +266,13 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                   variant="primary"
                   onClick={() => handleApply(prof)}
                   disabled={busyId !== null || !hasData}
-                  title={!connected(prof.device_id) ? "Cihaz bağlı değil; yalnızca uygulamadaki ayarlar değişir" : undefined}
+                  title={!connected(prof.device_id) ? "Device not connected; only the settings in the app change" : undefined}
                 >
-                  {busyId === prof.id ? "Uygulanıyor…" : "Uygula"}
+                  {busyId === prof.id ? "Applying…" : "Apply"}
                 </Button>
                 <Button
-                  aria-label={`${prof.name} profilini dışa aktar`}
-                  title="Dışa aktar"
+                  aria-label={`Export the profile ${prof.name}`}
+                  title="Export"
                   onClick={() => handleExport(prof)}
                   className="w-8 px-0"
                 >
@@ -280,8 +280,8 @@ export const ProfilesView: React.FC<ProfilesViewProps> = ({ devices }) => {
                 </Button>
                 <Button
                   variant="destructive"
-                  aria-label={`${prof.name} profilini sil`}
-                  title="Sil"
+                  aria-label={`Delete the profile ${prof.name}`}
+                  title="Delete"
                   onClick={() => handleDelete(prof)}
                   className="w-8 px-0"
                 >

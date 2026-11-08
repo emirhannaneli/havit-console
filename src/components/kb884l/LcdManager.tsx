@@ -12,15 +12,15 @@ import {
 } from "../../api";
 
 const FIT_OPTIONS: { id: LcdFit; label: string }[] = [
-  { id: "fit", label: "Sığdır" },
-  { id: "fill", label: "Doldur" },
-  { id: "stretch", label: "Uzat" },
+  { id: "fit", label: "Fit" },
+  { id: "fill", label: "Fill" },
+  { id: "stretch", label: "Stretch" },
 ];
 
 const FIT_HINT: Record<LcdFit, string> = {
-  fit: "Görselin tamamı görünür; oran farklıysa kenarlarda siyah boşluk kalır.",
-  fill: "Ekranı doldurur; taşan kenarlar kırpılır.",
-  stretch: "Ekranı doldurur; görsel en-boy oranı bozularak esnetilir.",
+  fit: "Shows the whole image; black bars fill any aspect-ratio gap.",
+  fill: "Fills the screen; overflowing edges are cropped.",
+  stretch: "Fills the screen by stretching; the aspect ratio changes.",
 };
 
 /** What the preview is showing: a file picked now, or the last known screen content. */
@@ -88,7 +88,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       if (!path) return;
       await loadFile(path);
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Dosya seçilemedi: ${err}` });
+      setStatusMsg({ type: "error", text: `Couldn’t choose the file: ${err}` });
     }
   };
 
@@ -109,7 +109,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
         onPreviewUpdate(decodedFrames[0].data_url);
       }
     } catch (err) {
-      if (isLatest()) setStatusMsg({ type: "error", text: `Önizleme oluşturulamadı: ${err}` });
+      if (isLatest()) setStatusMsg({ type: "error", text: `Couldn’t build the preview: ${err}` });
     } finally {
       if (isLatest()) setLoadingPreview(false);
     }
@@ -134,7 +134,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
   const handleUploadToKeyboard = async () => {
     if (!selectedFilePath) {
-      setStatusMsg({ type: "error", text: "Lütfen önce bir görsel veya GIF seçin." });
+      setStatusMsg({ type: "error", text: "Choose an image or GIF first." });
       return;
     }
     try {
@@ -146,7 +146,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       setSelectedFilePath(null);
       setStatusMsg({ type: "success", text: res });
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Yükleme hatası: ${err}` });
+      setStatusMsg({ type: "error", text: `Upload failed: ${err}` });
     } finally {
       setUploading(false);
     }
@@ -159,7 +159,7 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
       const res = await syncKb884lClock(uploadSlot);
       setStatusMsg({ type: "success", text: res });
     } catch (err) {
-      setStatusMsg({ type: "error", text: `Saat senkronizasyon hatası: ${err}` });
+      setStatusMsg({ type: "error", text: `Clock sync failed: ${err}` });
     } finally {
       setClockSyncing(false);
     }
@@ -172,9 +172,9 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
   const sourceNote =
     previewSource === "app"
-      ? `Klavyede olduğu bilinen son görüntü${onScreenSlot !== null ? ` (Yuva ${onScreenSlot + 1})` : ""}. Klavye ekranı geri okunamadığı için bu uygulamadan en son yüklenen gösteriliyor.`
+      ? `Last known screen content${onScreenSlot !== null ? ` (slot ${onScreenSlot + 1})` : ""}. The screen can’t be read back, so this is the last upload from this app.`
       : previewSource === "vendor"
-        ? "Havit uygulamasından en son yüklenen görüntü gösteriliyor. Klavye ekranı geri okunamaz; arada değiştirildiyse farklı olabilir."
+        ? "Showing the last upload from the Havit app. The screen can’t be read back, so it may differ if it was changed since."
         : null;
 
   const currentPreviewDataUrl = frames[activeFrameIndex]?.data_url;
@@ -183,8 +183,8 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
   return (
     <>
       <Section
-        title="Ekran görüntüsü"
-        footer={sourceNote ?? "GIF, PNG, JPG ve WEBP desteklenir. Ekran 160×96 piksel ve 65 bin renk gösterir; önizleme klavyede görüneceği gibidir."}
+        title="Screen"
+        footer={sourceNote ?? "GIF, PNG, JPG and WEBP are supported. The screen shows 160×96 pixels in 65 thousand colors; the preview matches the keyboard."}
       >
         <div className="flex flex-wrap items-stretch gap-4 p-3.5">
           <div className="flex flex-none flex-col items-center gap-2">
@@ -192,20 +192,20 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
               {currentPreviewDataUrl ? (
                 <img
                   src={currentPreviewDataUrl}
-                  alt="Ekran önizlemesi"
+                  alt="Screen preview"
                   className="pixelated h-full w-full object-contain"
                 />
               ) : (
                 <span className="flex flex-col items-center gap-1.5 text-[11px] text-[#9a9a9a]">
                   <FileImage aria-hidden="true" className="h-7 w-7 opacity-60" />
-                  Medya seçilmedi
+                  No media selected
                 </span>
               )}
               {frames.length > 1 && (
                 <button
                   type="button"
                   onClick={() => setIsPlaying(!isPlaying)}
-                  aria-label={isPlaying ? "Animasyonu duraklat" : "Animasyonu oynat"}
+                  aria-label={isPlaying ? "Pause animation" : "Play animation"}
                   className="absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-full border-0 bg-black/60 text-white"
                 >
                   {isPlaying ? (
@@ -218,8 +218,8 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
             </div>
             <span className="text-[11px] text-secondary tabular-nums">
               {frames.length > 0
-                ? `Kare ${activeFrameIndex + 1} / ${frames.length} · ${frames[activeFrameIndex]?.delay_ms} ms`
-                : "160 × 96 piksel"}
+                ? `Frame ${activeFrameIndex + 1} of ${frames.length} · ${frames[activeFrameIndex]?.delay_ms} ms`
+                : "160 × 96 pixels"}
             </span>
           </div>
 
@@ -233,21 +233,21 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
           >
             <Upload aria-hidden="true" className="h-6 w-6 text-secondary" />
             <span className="font-medium">
-              {loadingPreview ? "Önizleme hazırlanıyor…" : "Görseli buraya sürükle ya da seç"}
+              {loadingPreview ? "Preparing preview…" : "Drop an image here or choose one"}
             </span>
-            <span className="text-xs text-secondary">Animasyonlu GIF’ler kare kare çözülür</span>
+            <span className="text-xs text-secondary">Animated GIFs are decoded frame by frame</span>
           </button>
         </div>
 
         {frames.length > 1 && (
           <div className="flex flex-col gap-1.5 px-3.5 py-3">
-            <span className="text-xs text-secondary">Kareler ({frames.length})</span>
+            <span className="text-xs text-secondary">Frames ({frames.length})</span>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {frames.map((f) => (
                 <button
                   key={f.index}
                   type="button"
-                  aria-label={`Kare ${f.index + 1}`}
+                  aria-label={`Frame ${f.index + 1}`}
                   aria-pressed={activeFrameIndex === f.index}
                   onClick={() => {
                     setIsPlaying(false);
@@ -266,18 +266,18 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
           </div>
         )}
 
-        <Row label="Yerleşim" description={FIT_HINT[fit]}>
-          <Segmented label="Görsel yerleşimi" options={FIT_OPTIONS} value={fit} onChange={handleFitChange} />
+        <Row label="Placement" description={FIT_HINT[fit]}>
+          <Segmented label="Image placement" options={FIT_OPTIONS} value={fit} onChange={handleFitChange} />
         </Row>
 
-        <Row label="Ekran yuvası" htmlFor="lcd-slot">
+        <Row label="Screen slot" htmlFor="lcd-slot">
           <Select
             id="lcd-slot"
             value={uploadSlot}
             options={[
-              { value: 0, label: "Yuva 1 · varsayılan" },
-              { value: 1, label: "Yuva 2" },
-              { value: 2, label: "Yuva 3" },
+              { value: 0, label: "Slot 1 · default" },
+              { value: 1, label: "Slot 2" },
+              { value: 2, label: "Slot 3" },
             ]}
             onChange={setUploadSlot}
           />
@@ -285,15 +285,15 @@ export const LcdManager: React.FC<LcdManagerProps> = ({ onPreviewUpdate }) => {
 
         <ActionRow status={status}>
           <Button variant="primary" onClick={handleUploadToKeyboard} disabled={uploading || !selectedFilePath || frames.length === 0}>
-            {uploading ? "Yükleniyor…" : "Klavyeye yükle"}
+            {uploading ? "Uploading…" : "Upload to keyboard"}
           </Button>
         </ActionRow>
       </Section>
 
-      <Section title="Saat">
-        <Row label="Bilgisayar saatini eşitle" description="Ekrandaki saati bu bilgisayarın saatine ayarlar">
+      <Section title="Clock">
+        <Row label="Sync computer time" description="Sets the clock on the screen to this computer’s time">
           <Button onClick={handleSyncClock} disabled={clockSyncing}>
-            {clockSyncing ? "Eşitleniyor…" : "Eşitle"}
+            {clockSyncing ? "Syncing…" : "Sync"}
           </Button>
         </Row>
       </Section>

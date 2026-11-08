@@ -55,7 +55,7 @@ async fn off_ui_thread<T: Send + 'static>(
         work()
     })
     .await
-    .map_err(|e| format!("Arka plan işi başarısız oldu: {e}"))?
+    .map_err(|e| format!("Background task failed: {e}"))?
 }
 
 #[tauri::command]
@@ -224,8 +224,8 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
-    let show = MenuItem::with_id(app, "show", "Havit Console'u Aç", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Çıkış", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "Open Havit Console", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &PredefinedMenuItem::separator(app)?, &quit])?;
 
     let mut tray = TrayIconBuilder::with_id("main")
@@ -267,7 +267,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                // Keep running in the tray; "Çıkış" in the tray menu exits.
+                // Keep running in the tray; "Quit" in the tray menu exits.
                 api.prevent_close();
                 let _ = window.hide();
             }

@@ -7,8 +7,8 @@ import { Button, Card, ConnectionLabel, cx, readPref, Row, Sheet, Switch, writeP
 export const ONBOARDED_PREF = "onboarded";
 
 const KNOWN: { id: string; title: string; hint: string; icon: React.ElementType }[] = [
-  { id: "kb884l", title: "KB884L Klavye", hint: "Mekanik klavye · USB", icon: Keyboard },
-  { id: "fuxi-h7", title: "Fuxi-H7 Kulaklık", hint: "Kablosuz kulaklık · USB alıcı", icon: Headphones },
+  { id: "kb884l", title: "KB884L Keyboard", hint: "Mechanical keyboard · USB", icon: Keyboard },
+  { id: "fuxi-h7", title: "Fuxi-H7 Headset", hint: "Wireless headset · USB receiver", icon: Headphones },
 ];
 
 const STEPS = 3;
@@ -44,17 +44,17 @@ export const OnboardingSheet: React.FC<{
               </span>
               <div className="flex flex-col gap-2">
                 <h2 id="ob-title" className="m-0 text-[22px] leading-[26px] font-bold">
-                  Havit Console’a Hoş Geldin
+                  Welcome to Havit Console
                 </h2>
                 <p className="m-0 max-w-[440px] leading-[18px] text-secondary">
-                  Havit klavye ve kulaklığını tek bir uygulamadan yönet. Ayrı ayrı yazılım yüklemene gerek yok.
+                  Manage your Havit keyboard and headset from one app. No separate vendor software needed.
                 </p>
               </div>
               <Card className="w-full max-w-[420px] text-left">
                 {[
-                  "Açık kaynak; kodun tamamı GitHub’da.",
-                  "Veri toplamaz, hesap istemez.",
-                  "Havit ile bağlantılı değildir; bağımsız bir topluluk projesidir.",
+                  "Open source; all code is on GitHub.",
+                  "No data collection, no account.",
+                  "Not affiliated with Havit; an independent community project.",
                 ].map((t) => (
                   <span key={t} className="flex items-start gap-2.5 px-3.5 py-2.5">
                     <Check aria-hidden="true" className="mt-px h-4 w-4 flex-none text-success" strokeWidth={2.6} />
@@ -69,14 +69,14 @@ export const OnboardingSheet: React.FC<{
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <h2 id="ob-title" className="m-0 text-[22px] leading-[26px] font-bold">
-                  {connected > 0 ? "Cihazların bulundu" : "Cihaz aranıyor"}
+                  {connected > 0 ? "Devices found" : "Looking for devices"}
                 </h2>
                 <p role="status" aria-live="polite" className="m-0 leading-[18px] text-secondary">
                   {connected > 0
-                    ? `${connected} Havit cihazı algılandı. Ayarlar sen değiştirene kadar cihazlara yazılmaz.`
+                    ? `${connected} Havit ${connected === 1 ? "device" : "devices"} detected. Nothing is written to a device until you change a setting.`
                     : scanning
-                      ? "USB’ye takılı Havit cihazları taranıyor…"
-                      : "Henüz bağlı cihaz yok. Cihazını takınca birkaç saniye içinde burada görünür."}
+                      ? "Scanning for Havit devices on USB…"
+                      : "No device connected yet. Plug one in and it appears here within a few seconds."}
                 </p>
               </div>
               <Card>
@@ -95,7 +95,7 @@ export const OnboardingSheet: React.FC<{
               </Card>
               <p className="m-0 flex items-start gap-2 text-xs leading-4 text-secondary">
                 <Info aria-hidden="true" className="mt-px h-3.5 w-3.5 flex-none" />
-                Cihazın listede yok mu? Kulaklıkta USB alıcının takılı olduğundan emin ol.
+                Device missing? For the headset, make sure the USB receiver is plugged in.
               </p>
             </div>
           )}
@@ -107,15 +107,15 @@ export const OnboardingSheet: React.FC<{
               </span>
               <div className="flex flex-col gap-2">
                 <h2 id="ob-title" className="m-0 text-[22px] leading-[26px] font-bold">
-                  Hazırsın
+                  You’re all set
                 </h2>
                 <p className="m-0 max-w-[420px] leading-[18px] text-secondary">
-                  Cihazlarını sol menüden açabilirsin. Bu ayarı sonradan Güncellemeler bölmesinden değiştirebilirsin.
+                  Open your devices from the sidebar. You can change this setting later in Updates.
                 </p>
               </div>
               <Card className="w-full max-w-[420px] text-left">
-                <Row label="Güncellemeleri otomatik denetle">
-                  <Switch label="Güncellemeleri otomatik denetle" checked={autoCheck} onChange={setAutoCheck} />
+                <Row label="Check for updates automatically">
+                  <Switch label="Check for updates automatically" checked={autoCheck} onChange={setAutoCheck} />
                 </Row>
               </Card>
             </div>
@@ -125,12 +125,12 @@ export const OnboardingSheet: React.FC<{
         <div className="flex h-16 flex-none items-center gap-2 border-t border-separator bg-sidebar px-5">
           {step < STEPS ? (
             <Button variant="plain" className="text-secondary" onClick={() => setStep(STEPS)}>
-              Kurulumu atla
+              Skip setup
             </Button>
           ) : (
             <span className="w-[100px]" />
           )}
-          <div role="img" aria-label={`Adım ${step} / ${STEPS}`} className="flex flex-1 justify-center gap-2">
+          <div role="img" aria-label={`Step ${step} of ${STEPS}`} className="flex flex-1 justify-center gap-2">
             {Array.from({ length: STEPS }, (_, i) => (
               <span
                 key={i}
@@ -141,14 +141,14 @@ export const OnboardingSheet: React.FC<{
               />
             ))}
           </div>
-          {step > 1 && step < STEPS && <Button onClick={() => setStep(step - 1)}>Geri</Button>}
+          {step > 1 && step < STEPS && <Button onClick={() => setStep(step - 1)}>Back</Button>}
           <Button
             variant="primary"
             className="min-w-[84px]"
             autoFocus
             onClick={() => (step === STEPS ? finish() : setStep(step + 1))}
           >
-            {step === 1 ? "Başla" : step === STEPS ? "Havit Console’u Aç" : "Devam"}
+            {step === 1 ? "Get started" : step === STEPS ? "Open Havit Console" : "Continue"}
           </Button>
         </div>
       </div>

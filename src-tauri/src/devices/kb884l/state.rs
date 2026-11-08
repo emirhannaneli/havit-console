@@ -41,11 +41,11 @@ fn read_saved() -> Kb884lState {
 }
 
 fn write_saved(update: impl FnOnce(&mut Kb884lState)) -> Result<(), String> {
-    let path = state_path().ok_or("Uygulama veri klasörü bulunamadı")?;
+    let path = state_path().ok_or("App data folder not found")?;
     let mut state = read_saved();
     update(&mut state);
     if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir).map_err(|e| format!("Klasör oluşturulamadı: {e}"))?;
+        fs::create_dir_all(dir).map_err(|e| format!("Couldn't create folder: {e}"))?;
     }
     let json = serde_json::to_string_pretty(&Kb884lState {
         lighting_source: None,
@@ -53,7 +53,7 @@ fn write_saved(update: impl FnOnce(&mut Kb884lState)) -> Result<(), String> {
         ..state
     })
     .map_err(|e| e.to_string())?;
-    fs::write(&path, json).map_err(|e| format!("Durum kaydedilemedi: {e}"))
+    fs::write(&path, json).map_err(|e| format!("Couldn't save state: {e}"))
 }
 
 pub fn remember_lighting(cfg: &Kb884lLightingConfig) -> Result<(), String> {
@@ -108,20 +108,20 @@ fn screen_dir() -> Option<PathBuf> {
 
 /// Stores the frames exactly as uploaded (already scaled and quantized).
 pub fn remember_screen(frames: &[EncodedLcdFrame], slot: u8) -> Result<(), String> {
-    let dir = screen_dir().ok_or("Uygulama veri klasörü bulunamadı")?;
+    let dir = screen_dir().ok_or("App data folder not found")?;
     if dir.exists() {
-        fs::remove_dir_all(&dir).map_err(|e| format!("Eski ekran kopyası silinemedi: {e}"))?;
+        fs::remove_dir_all(&dir).map_err(|e| format!("Couldn't remove the previous screen copy: {e}"))?;
     }
-    fs::create_dir_all(&dir).map_err(|e| format!("Klasör oluşturulamadı: {e}"))?;
+    fs::create_dir_all(&dir).map_err(|e| format!("Couldn't create folder: {e}"))?;
     let mut manifest = ScreenManifest { slot, frames: Vec::with_capacity(frames.len()) };
     for (i, f) in frames.iter().enumerate() {
         let name = format!("{i}.png");
         fs::write(dir.join(&name), frame_to_png(&f.rgba)?)
-            .map_err(|e| format!("Kare kaydedilemedi: {e}"))?;
+            .map_err(|e| format!("Couldn't save frame: {e}"))?;
         manifest.frames.push((name, f.delay_ms));
     }
     let json = serde_json::to_string(&manifest).map_err(|e| e.to_string())?;
-    fs::write(dir.join("manifest.json"), json).map_err(|e| format!("Ekran kaydedilemedi: {e}"))
+    fs::write(dir.join("manifest.json"), json).map_err(|e| format!("Couldn't save screen: {e}"))
 }
 
 fn load_frames(dir: &std::path::Path, list: &[(String, u16)]) -> Result<Vec<EncodedLcdFrame>, String> {
@@ -131,7 +131,7 @@ fn load_frames(dir: &std::path::Path, list: &[(String, u16)]) -> Result<Vec<Enco
             // Vendor frames are plain PNGs; run them through the same pipeline as uploads.
             let path = dir.join(name);
             let mut frames = load_media_frames(&path.to_string_lossy(), LcdFit::Fit)?;
-            let mut frame = frames.pop().ok_or("Boş kare")?;
+            let mut frame = frames.pop().ok_or("Empty frame")?;
             frame.delay_ms = *delay_ms;
             Ok(frame)
         })
@@ -195,7 +195,7 @@ fn read_vendor() -> Result<VendorState, String> {
         return Ok((None, None));
     };
     let db = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)
-        .map_err(|e| format!("Havit veritabanı açılamadı: {e}"))?;
+        .map_err(|e| format!("Couldn't open the Havit database: {e}"))?;
 
     let byte = |v: i64, max: i64| v.clamp(0, max) as u8;
 
@@ -219,7 +219,7 @@ fn read_vendor() -> Result<VendorState, String> {
             },
         )
         .optional()
-        .map_err(|e| format!("Havit ışık ayarı okunamadı: {e}"))?;
+        .map_err(|e| format!("Couldn't read the Havit lighting setting: {e}"))?;
 
     let config = |key: &str| -> Option<String> {
         db.query_row(

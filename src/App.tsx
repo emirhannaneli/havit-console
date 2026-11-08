@@ -20,12 +20,12 @@ import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
 import { DeviceSettingsProvider } from "./state/DeviceSettings";
 
 const TITLES: Record<View, string> = {
-  devices: "Cihazlar",
-  kb884l: "KB884L Klavye",
-  "fuxi-h7": "Fuxi-H7 Kulaklık",
-  profiles: "Profiller",
-  updates: "Güncellemeler",
-  diagnostics: "Tanılama",
+  devices: "Devices",
+  kb884l: "KB884L Keyboard",
+  "fuxi-h7": "Fuxi-H7 Headset",
+  profiles: "Profiles",
+  updates: "Updates",
+  diagnostics: "Diagnostics",
 };
 
 export default function App() {
@@ -77,7 +77,7 @@ export default function App() {
       setDevices(devList);
       setScanError(null);
     } catch (err) {
-      console.error("Cihaz tarama hatası:", err);
+      console.error("Device scan failed:", err);
       setScanError(String(err));
     } finally {
       if (manual) setLoading(false);
@@ -116,7 +116,7 @@ export default function App() {
             <Button
               variant="plain"
               aria-label={
-                sidebarOpen ? "Kenar çubuğunu gizle" : "Kenar çubuğunu göster"
+                sidebarOpen ? "Hide sidebar" : "Show sidebar"
               }
               aria-expanded={sidebarOpen}
               onClick={() => setSidebarOpen((o) => !o)}
@@ -127,7 +127,7 @@ export default function App() {
             {isDeviceView && (
               <Button
                 variant="plain"
-                aria-label="Geri: Cihazlar"
+                aria-label="Back to Devices"
                 onClick={() => setView("devices")}
                 className="h-8 w-8 px-0 text-secondary"
               >
@@ -139,7 +139,7 @@ export default function App() {
               {isDeviceView && (
                 <span className="flex flex-none items-center gap-1.5 text-xs font-normal text-secondary">
                   <StatusDot on={currentDevice?.connected ?? false} />
-                  {currentDevice?.connected ? "Bağlı" : "Bağlı değil"}
+                  {currentDevice?.connected ? "Connected" : "Not connected"}
                 </span>
               )}
             </h1>
@@ -153,7 +153,7 @@ export default function App() {
                 aria-hidden="true"
                 className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
               />
-              {loading ? "Taranıyor…" : "Cihazları tara"}
+              {loading ? "Scanning…" : "Scan devices"}
             </Button>
           </header>
 

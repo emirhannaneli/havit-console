@@ -20,32 +20,32 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   statusMessage,
   note,
 }) => (
-  <Section title="Gelişmiş" footer={note}>
-    <Row label="Windows tuşunu kilitle" description="Oyun sırasında yanlışlıkla masaüstüne düşmeni önler">
+  <Section title="Advanced" footer={note}>
+    <Row label="Lock Windows key" description="Prevents accidentally minimizing games">
       <Switch
-        label="Windows tuşunu kilitle"
+        label="Lock Windows key"
         checked={settings.win_lock}
         onChange={(win_lock) => onChange({ ...settings, win_lock })}
       />
     </Row>
 
-    <Row label="Fn kilidi" description="Fn tuşunu basılı tutmadan Fn katmanını etkin tutar">
+    <Row label="Fn lock" description="Keeps the Fn layer active without holding Fn">
       <Switch
-        label="Fn kilidi"
+        label="Fn lock"
         checked={settings.fn_toggle}
         onChange={(fn_toggle) => onChange({ ...settings, fn_toggle })}
       />
     </Row>
 
-    <Row label="Işık uyku süresi" description="Bu süre boyunca kullanılmazsa klavyenin ışıkları kapanır" htmlFor="kb-sleep">
+    <Row label="Lighting sleep" description="Turns the lights off after this much idle time" htmlFor="kb-sleep">
       <Select
         id="kb-sleep"
         value={settings.sleep_minutes}
         options={[
-          { value: 0, label: "Hiçbir zaman" },
-          { value: 1, label: "1 dakika" },
-          { value: 5, label: "5 dakika" },
-          { value: 30, label: "30 dakika" },
+          { value: 0, label: "Never" },
+          { value: 1, label: "1 minute" },
+          { value: 5, label: "5 minutes" },
+          { value: 30, label: "30 minutes" },
         ]}
         onChange={(sleep_minutes) => onChange({ ...settings, sleep_minutes })}
         className="min-w-[200px]"
@@ -54,7 +54,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
     <ActionRow status={statusMessage}>
       <Button variant="primary" onClick={onSave} disabled={saving}>
-        {saving ? "Kaydediliyor…" : "Klavyeye kaydet"}
+        {saving ? "Saving…" : "Save to keyboard"}
       </Button>
     </ActionRow>
   </Section>

@@ -22,7 +22,7 @@ export const ProfileQuickBar: React.FC<{
   useEffect(() => {
     fetchProfiles(device)
       .then((list) => setProfiles(list.filter((p) => p.device_id === device)))
-      .catch((err) => setMsg({ tone: "error", text: `Profiller yüklenemedi: ${err}` }));
+      .catch((err) => setMsg({ tone: "error", text: `Couldn’t load profiles: ${err}` }));
   }, [device]);
 
   const selected = profiles.find((p) => p.id === selectedId) ?? null;
@@ -40,7 +40,7 @@ export const ProfileQuickBar: React.FC<{
       flash({ tone: "success", text: await applyProfile(selected) });
       onApplied?.();
     } catch (err) {
-      flash({ tone: "error", text: `Uygulanamadı: ${err}` });
+      flash({ tone: "error", text: `Couldn’t apply: ${err}` });
     } finally {
       setBusy(false);
     }
@@ -64,9 +64,9 @@ export const ProfileQuickBar: React.FC<{
       setSelectedId(saved.id);
       setName("");
       setNaming(false);
-      flash({ tone: "success", text: `“${saved.name}” kaydedildi.` });
+      flash({ tone: "success", text: `“${saved.name}” saved.` });
     } catch (err) {
-      flash({ tone: "error", text: `Kaydedilemedi: ${err}` });
+      flash({ tone: "error", text: `Couldn’t save: ${err}` });
     } finally {
       setBusy(false);
     }
@@ -74,17 +74,17 @@ export const ProfileQuickBar: React.FC<{
 
   return (
     <Section
-      title="Profil"
-      footer="Profil, bu sayfadaki tüm ayarların anlık kopyasıdır. Profiller sayfasından dışa aktarıp paylaşabilirsin."
+      title="Profile"
+      footer="A profile is a snapshot of every setting on this page. Export and share profiles from the Profiles page."
     >
       <Row
-        label="Kayıtlı profil"
+        label="Saved profile"
         description={
           selected
             ? describeProfile(selected)
             : profiles.length === 0
-              ? "Henüz profil yok; mevcut ayarları “Kaydet…” ile profil yap"
-              : "Uygulamak için bir profil seç"
+              ? "No profiles yet; choose “Save…” to turn the current settings into one"
+              : "Choose a profile to apply"
         }
         htmlFor={`profile-${device}`}
       >
@@ -92,7 +92,7 @@ export const ProfileQuickBar: React.FC<{
           id={`profile-${device}`}
           value={selectedId}
           options={[
-            { value: "", label: profiles.length === 0 ? "Profil yok" : "Profil seç…", disabled: true },
+            { value: "", label: profiles.length === 0 ? "No profiles" : "Choose a profile…", disabled: true },
             ...profiles.map((p) => ({ value: p.id, label: p.name })),
           ]}
           onChange={setSelectedId}
@@ -102,12 +102,12 @@ export const ProfileQuickBar: React.FC<{
 
       {naming && (
         <form onSubmit={handleSave} className="contents">
-          <Row label="Profil adı" description="Mevcut ayarlar bu adla kaydedilir" htmlFor={`profile-name-${device}`}>
+          <Row label="Profile name" description="The current settings are saved under this name" htmlFor={`profile-name-${device}`}>
             <TextField
               id={`profile-name-${device}`}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Örn. Gece oyun"
+              placeholder="e.g. Night gaming"
               autoFocus
               required
               className="w-[220px]"
@@ -115,10 +115,10 @@ export const ProfileQuickBar: React.FC<{
           </Row>
           <ActionRow status={msg}>
             <Button onClick={() => setNaming(false)} disabled={busy}>
-              Vazgeç
+              Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={busy || !name.trim()}>
-              Kaydet
+              Save
             </Button>
           </ActionRow>
         </form>
@@ -127,15 +127,15 @@ export const ProfileQuickBar: React.FC<{
       {!naming && (
         <ActionRow status={msg}>
           <Button onClick={() => setNaming(true)} disabled={busy}>
-            Kaydet…
+            Save…
           </Button>
           <Button
             variant="primary"
             onClick={handleApply}
             disabled={busy || !selected || !connected}
-            title={!connected ? "Cihaz bağlı değil" : undefined}
+            title={!connected ? "Device not connected" : undefined}
           >
-            {busy ? "Uygulanıyor…" : "Uygula"}
+            {busy ? "Applying…" : "Apply"}
           </Button>
         </ActionRow>
       )}

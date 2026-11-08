@@ -20,10 +20,10 @@ export const MicrophonePanel: React.FC<MicrophonePanelProps> = ({
   onSidetoneChange,
 }) => (
   <Section
-    title="Mikrofon"
-    footer={status.mic_found ? `Giriş aygıtı: ${status.mic_name}` : "Mikrofon bulunamadı."}
+    title="Microphone"
+    footer={status.mic_found ? `Input device: ${status.mic_name}` : "Microphone not found."}
   >
-    <Row label="Kazanç" htmlFor="fx-mic">
+    <Row label="Gain" htmlFor="fx-mic">
       <Slider
         id="fx-mic"
         min={0}
@@ -31,24 +31,24 @@ export const MicrophonePanel: React.FC<MicrophonePanelProps> = ({
         value={status.mic_volume}
         disabled={status.mic_muted}
         onChange={(e) => onMicChange(Number(e.target.value), status.mic_muted)}
-        valueText={status.mic_muted ? "Sessiz" : `%${status.mic_volume}`}
+        valueText={status.mic_muted ? "Muted" : `${status.mic_volume}%`}
       />
     </Row>
 
-    <Row label="Mikrofonu sessize al">
+    <Row label="Mute microphone">
       <Switch
-        label="Mikrofonu sessize al"
+        label="Mute microphone"
         checked={status.mic_muted}
         onChange={(muted) => onMicChange(status.mic_volume, muted)}
       />
     </Row>
 
-    <Row label="Gürültü engelleme (ENC)" description="Klavye tıkırtısını ve ortam gürültüsünü bastırır">
-      <Switch label="Gürültü engelleme" checked={encEnabled} onChange={onEncChange} />
+    <Row label="Noise cancelling (ENC)" description="Suppresses keyboard clatter and background noise">
+      <Switch label="Noise cancelling" checked={encEnabled} onChange={onEncChange} />
     </Row>
 
-    <Row label="Yan ton" description="Konuşurken kendi sesini kulaklıktan duyarsın">
-      <Switch label="Yan ton" checked={sidetoneEnabled} onChange={onSidetoneChange} />
+    <Row label="Sidetone" description="Hear your own voice in the headset while you talk">
+      <Switch label="Sidetone" checked={sidetoneEnabled} onChange={onSidetoneChange} />
     </Row>
   </Section>
 );

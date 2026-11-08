@@ -67,8 +67,8 @@ export const PacketInspectorView: React.FC = () => {
           <Search aria-hidden="true" className="h-3.5 w-3.5 flex-none" />
           <input
             type="search"
-            aria-label="Paketlerde ara"
-            placeholder="Kayıtlarda ara…"
+            aria-label="Search packets"
+            placeholder="Search log…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-label outline-none placeholder:text-tertiary"
@@ -76,12 +76,12 @@ export const PacketInspectorView: React.FC = () => {
         </label>
 
         <Select
-          label="Cihaza göre filtrele"
+          label="Filter by device"
           value={deviceFilter}
           options={[
-            { value: "all", label: "Tüm cihazlar" },
-            { value: "kb884l", label: "KB884L Klavye" },
-            { value: "fuxi-h7", label: "Fuxi-H7 Kulaklık" },
+            { value: "all", label: "All devices" },
+            { value: "kb884l", label: "KB884L Keyboard" },
+            { value: "fuxi-h7", label: "Fuxi-H7 Headset" },
           ]}
           onChange={setDeviceFilter}
         />
@@ -93,22 +93,22 @@ export const PacketInspectorView: React.FC = () => {
             onChange={(e) => setAutoScroll(e.target.checked)}
             className="m-0 h-3.5 w-3.5"
           />
-          Otomatik kaydır
+          Auto-scroll
         </label>
 
         <Button variant="destructive" onClick={handleClear} disabled={logs.length === 0}>
           <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
-          Temizle
+          Clear
         </Button>
       </div>
 
-      <section aria-label="HID paket günlüğü" className="flex flex-col gap-2">
+      <section aria-label="HID packet log" className="flex flex-col gap-2">
         <div className="max-h-[calc(100vh-220px)] min-h-[320px] overflow-y-auto rounded-[10px] border border-separator bg-card font-mono text-xs">
           {filtered.length === 0 ? (
             <p className="m-0 px-4 py-20 text-center font-sans text-[13px] text-secondary">
               {logs.length === 0
-                ? "Henüz kayıt yok. Bir cihazda ayar değiştirdiğinde iletişim burada görünür."
-                : "Aramanla eşleşen paket yok."}
+                ? "Nothing logged yet. Change a device setting and the traffic appears here."
+                : "No packets match your search."}
             </p>
           ) : (
             <ul className="m-0 flex list-none flex-col divide-y divide-separator p-0">
@@ -142,11 +142,11 @@ export const PacketInspectorView: React.FC = () => {
                     </span>
                     {log.hex_preview && (
                       <span className="flex flex-none items-center gap-2">
-                        <span className="text-[11px] text-secondary">{log.byte_len} bayt</span>
+                        <span className="text-[11px] text-secondary">{log.byte_len} bytes</span>
                         <Button
                           variant="plain"
-                          aria-label={copiedId === log.id ? "Kopyalandı" : "Hex baytlarını kopyala"}
-                          title="Hex baytlarını kopyala"
+                          aria-label={copiedId === log.id ? "Copied" : "Copy hex bytes"}
+                          title="Copy hex bytes"
                           onClick={() => handleCopyHex(log.id, log.hex_preview)}
                           className="h-7 w-7 px-0"
                         >
@@ -166,7 +166,7 @@ export const PacketInspectorView: React.FC = () => {
           <div ref={bottomRef} />
         </div>
         <p className="m-0 px-1 text-[11px] leading-[14px] text-secondary">
-          Uygulama ile cihazlar arasındaki iletişimin canlı kaydı. Bir sorun bildirirken bu kaydı paylaşabilirsin.
+          Live log of the traffic between the app and your devices. Share it when reporting a problem.
         </p>
       </section>
     </>

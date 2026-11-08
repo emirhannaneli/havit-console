@@ -21,14 +21,14 @@ export const EQ_FREQUENCIES = [
 ];
 
 export const EQ_PRESETS: Record<string, number[]> = {
-  Varsayılan: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  "Bas Güçlendirme (Bass Boost)": [8, 6, 4, 2, 0, 0, 0, 0, 0, 0],
-  "Tiz Netleştirme (Treble)": [0, 0, 0, 0, 0, 2, 4, 6, 8, 8],
-  "Rock Müziği": [5, 3, -1, -2, 1, 3, 5, 6, 7, 7],
-  "Canlı Konser (Live)": [-2, 0, 2, 3, 4, 4, 3, 2, 2, 1],
-  "Elektronik / Dance": [6, 5, 2, 0, -1, 2, 4, 5, 4, 3],
-  "PUBG / FPS Ayak Sesi": [2, 4, 6, 3, 0, 2, 5, 6, 4, 2],
-  "Valorant Yetenek & Netlik": [1, 2, 3, 1, 0, 3, 6, 7, 5, 3],
+  Default: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "Bass Boost": [8, 6, 4, 2, 0, 0, 0, 0, 0, 0],
+  "Treble Boost": [0, 0, 0, 0, 0, 2, 4, 6, 8, 8],
+  "Rock": [5, 3, -1, -2, 1, 3, 5, 6, 7, 7],
+  "Live": [-2, 0, 2, 3, 4, 4, 3, 2, 2, 1],
+  "Dance": [6, 5, 2, 0, -1, 2, 4, 5, 4, 3],
+  "FPS Footsteps": [2, 4, 6, 3, 0, 2, 5, 6, 4, 2],
+  "Valorant Clarity": [1, 2, 3, 1, 0, 3, 6, 7, 5, 3],
 };
 
 interface EqualizerPanelProps {
@@ -36,7 +36,7 @@ interface EqualizerPanelProps {
   onChange: (newBands: number[]) => void;
   preamp: number;
   onPreampChange: (preamp: number) => void;
-  /** Active preset name; "Özel" once a band is edited by hand. */
+  /** Active preset name; "Custom" once a band is edited by hand. */
   preset: string;
   onPresetChange: (preset: string) => void;
 }
@@ -53,7 +53,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
     const updated = [...bands];
     updated[index] = val;
     onChange(updated);
-    onPresetChange("Özel");
+    onPresetChange("Custom");
   };
 
   const handleApplyPreset = (name: string, gains: number[]) => {
@@ -62,7 +62,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
   };
 
   const handleReset = () => {
-    handleApplyPreset("Varsayılan", EQ_PRESETS["Varsayılan"]);
+    handleApplyPreset("Default", EQ_PRESETS["Default"]);
     onPreampChange(0);
   };
 
@@ -71,22 +71,22 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
 
   return (
     <Section
-      title="Ekolayzer"
+      title="Equalizer"
       action={
         <Button variant="plain" onClick={handleReset} className="h-6 px-2 text-xs text-accent-text">
           <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />
-          Sıfırla
+          Reset
         </Button>
       }
-      footer="10 bant · ±20 dB. Bir bandı değiştirince ön ayar “Özel” olur."
+      footer="10 bands · ±20 dB. Editing a band switches the preset to “Custom”."
     >
-      <Row label="Ön ayar" htmlFor="eq-preset">
+      <Row label="Preset" htmlFor="eq-preset">
         <Select
           id="eq-preset"
           value={isCustom ? "__custom" : activePreset}
           options={[
             ...presetNames.map((name) => ({ value: name, label: name })),
-            ...(isCustom ? [{ value: "__custom", label: "Özel", disabled: true }] : []),
+            ...(isCustom ? [{ value: "__custom", label: "Custom", disabled: true }] : []),
           ]}
           onChange={(name) => {
             if (name in EQ_PRESETS) handleApplyPreset(name, EQ_PRESETS[name]);
@@ -116,7 +116,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   max={20}
                   step={1}
                   value={val}
-                  aria-label={`${freq} kazancı`}
+                  aria-label={`${freq} gain`}
                   aria-valuetext={`${val} dB`}
                   onChange={(e) => handleBandChange(idx, Number(e.target.value))}
                   className="h-40 w-6"

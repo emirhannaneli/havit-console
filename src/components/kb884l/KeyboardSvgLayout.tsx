@@ -4,7 +4,7 @@ import type { KeyDef, Kb884lLightingConfig, Kb884lPhysicalLayout } from "../../t
 interface KeyboardSvgLayoutProps {
   layout: Kb884lPhysicalLayout;
   lighting: Kb884lLightingConfig;
-  /** Shown as a caption on the chassis, e.g. "Nefes". */
+  /** Shown as a caption on the chassis, e.g. "Breath". */
   effectName: string;
   previewUrl: string | null;
   onKeySelect?: (key: KeyDef) => void;
@@ -94,7 +94,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
     const update = () => {
       const now = new Date();
       setClockString(
-        now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
       );
     };
     update();
@@ -112,7 +112,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
         viewBox={`0 0 ${width} ${height}`}
         className="block w-full min-w-[640px] select-none"
         role="group"
-        aria-label="Klavye düzeni"
+        aria-label="Keyboard layout"
       >
         <defs>
           <filter id="rgbGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
@@ -140,7 +140,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
           fontWeight="600"
           style={{ pointerEvents: "none" }}
         >
-          {lighting.mode === 0 ? "Işıklar kapalı" : `Efekt: ${effectName}`}
+          {lighting.mode === 0 ? "Lights off" : `Effect: ${effectName}`}
         </text>
 
         {/* Mini TFT screen bezel */}
@@ -163,7 +163,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded bg-black">
             {previewUrl ? (
-              <img src={previewUrl} alt="Ekran önizlemesi" className="pixelated h-full w-full object-cover" />
+              <img src={previewUrl} alt="Screen preview" className="pixelated h-full w-full object-cover" />
             ) : (
               <span className="font-mono text-[10px] font-bold tracking-wider text-[#ffb266]">
                 {clockString}
@@ -180,7 +180,7 @@ export const KeyboardSvgLayout: React.FC<KeyboardSvgLayoutProps> = ({
               key={k.key_index}
               role="button"
               tabIndex={0}
-              aria-label={`${k.label} tuşu`}
+              aria-label={`${k.label} key`}
               aria-pressed={isSelected}
               onClick={() => onKeySelect?.(k)}
               onKeyDown={(e) => {

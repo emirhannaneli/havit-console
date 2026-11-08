@@ -6,8 +6,8 @@ import { Button, ConnectionLabel, Notice, readPref, Row, Section, Switch, writeP
 import type { AppUpdate } from "./useAppUpdate";
 
 const DEVICES: { id: string; title: string; icon: React.ElementType }[] = [
-  { id: "kb884l", title: "KB884L Klavye", icon: Keyboard },
-  { id: "fuxi-h7", title: "Fuxi-H7 Kulaklık", icon: Headphones },
+  { id: "kb884l", title: "KB884L Keyboard", icon: Keyboard },
+  { id: "fuxi-h7", title: "Fuxi-H7 Headset", icon: Headphones },
 ];
 
 export const AUTO_CHECK_PREF = "updates.autoCheck";
@@ -24,7 +24,7 @@ interface UpdatesViewProps {
 }
 
 const formatSize = (bytes: number) =>
-  `${(bytes / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} MB`;
+  `${(bytes / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })} MB`;
 
 export const UpdatesView: React.FC<UpdatesViewProps> = ({
   app,
@@ -47,29 +47,29 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 px-1">
         <p role="status" aria-live="polite" className="m-0 text-xs text-secondary">
           {checking
-            ? "Güncellemeler denetleniyor…"
+            ? "Checking for updates…"
             : lastChecked
-              ? `Son denetim: ${lastChecked.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`
-              : "Henüz denetlenmedi"}
+              ? `Last checked ${lastChecked.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`
+              : "Not checked yet"}
         </p>
         <Button onClick={onCheck} disabled={checking || appBusy}>
           <RefreshCw
             aria-hidden="true"
             className={`h-4 w-4 ${checking ? "animate-spin motion-reduce:animate-none" : ""}`}
           />
-          Şimdi denetle
+          Check now
         </Button>
       </div>
 
       {checkError && (
-        <Notice tone="error" title="Güncellemeler denetlenemedi">
+        <Notice tone="error" title="Couldn’t check for updates">
           {checkError}
         </Notice>
       )}
 
       {check && !check.supported && (
-        <Notice tone="info" title="Firmware güncellemeleri henüz desteklenmiyor">
-          Bu sürümde firmware paketi kaynağı yok. Cihazların yüklü firmware sürümü aşağıda görünür.
+        <Notice tone="info" title="Firmware updates aren’t available yet">
+          This version has no firmware source. Installed firmware versions are listed below.
         </Notice>
       )}
 
@@ -77,38 +77,38 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
         title="Havit Console"
         footer={
           a.phase === "available" || a.phase === "downloading" || a.phase === "ready"
-            ? "Güncelleme GitHub’daki imzalı sürümden indirilir; yükleme bitince uygulama yeniden başlar."
-            : "Uygulama güncellemeleri GitHub Releases üzerinden gelir."
+            ? "The update is downloaded from the signed GitHub release; the app relaunches when installation finishes."
+            : "App updates are delivered through GitHub Releases."
         }
       >
         <Row
-          label={`Sürüm ${appVersion}`}
+          label={`Version ${appVersion}`}
           description={
             a.phase === "checking"
-              ? "Denetleniyor…"
+              ? "Checking…"
               : a.phase === "up-to-date"
-                ? "Uygulama güncel"
+                ? "Up to date"
                 : a.phase === "available"
-                  ? `Yeni sürüm hazır: ${a.version}${a.released ? ` · ${a.released.slice(0, 10)}` : ""}`
+                  ? `Version ${a.version} available${a.released ? ` · ${a.released.slice(0, 10)}` : ""}`
                   : a.phase === "downloading"
                     ? a.progress === null
-                      ? "İndiriliyor…"
-                      : `İndiriliyor… %${a.progress}`
+                      ? "Downloading…"
+                      : `Downloading… ${a.progress}%`
                     : a.phase === "ready"
-                      ? `${a.version} yüklendi; yeniden başlatınca etkin olur`
+                      ? `${a.version} installed; relaunch to finish`
                       : a.phase === "error"
-                        ? `Güncelleme başarısız: ${a.error}`
-                        : "Henüz denetlenmedi"
+                        ? `Update failed: ${a.error}`
+                        : "Not checked yet"
           }
         >
           {a.phase === "available" && (
             <Button variant="primary" onClick={app.install}>
-              İndir ve yükle
+              Download and install
             </Button>
           )}
           {a.phase === "downloading" && (
             <progress
-              aria-label="İndirme ilerlemesi"
+              aria-label="Download progress"
               className="h-1.5 w-[160px]"
               max={100}
               value={a.progress ?? undefined}
@@ -116,14 +116,14 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
           )}
           {a.phase === "ready" && (
             <Button variant="primary" onClick={app.restart}>
-              Yeniden başlat
+              Relaunch
             </Button>
           )}
-          {a.phase === "error" && <Button onClick={app.check}>Yeniden dene</Button>}
+          {a.phase === "error" && <Button onClick={app.check}>Try again</Button>}
         </Row>
         {a.notes && (a.phase === "available" || a.phase === "downloading" || a.phase === "ready") && (
           <div className="px-3.5 py-3">
-            <span className="text-xs font-semibold text-secondary">Sürüm notları</span>
+            <span className="text-xs font-semibold text-secondary">Release notes</span>
             <p className="m-0 mt-1 text-xs leading-4 whitespace-pre-line text-secondary">{a.notes}</p>
           </div>
         )}
@@ -131,11 +131,11 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
 
       {updates.length > 0 && (
         <Section
-          title="Hazır güncellemeler"
+          title="Available updates"
           footer={
             <span className="flex items-center gap-1.5">
               <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5 flex-none text-warning" />
-              Güncelleme sırasında cihazı çıkarma ve bilgisayarı uyutma.
+              Don’t unplug the device or put the computer to sleep during the update.
             </span>
           }
         >
@@ -150,7 +150,7 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
                       {u.device_name} firmware {u.version}
                     </span>
                     <span className="text-xs leading-[15px] text-secondary">
-                      Yüklü: {u.current_version ?? "bilinmiyor"} · {formatSize(u.size_bytes)} · Yayın: {u.released}
+                      Installed: {u.current_version ?? "unknown"} · {formatSize(u.size_bytes)} · Released: {u.released}
                     </span>
                   </span>
                   <Button
@@ -159,10 +159,10 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
                     aria-controls={notesId}
                     onClick={() => setOpenNotes(notesOpen ? null : u.device_id)}
                   >
-                    {notesOpen ? "Notları gizle" : "Sürüm notları"}
+                    {notesOpen ? "Hide notes" : "Release notes"}
                   </Button>
                   <Button variant="primary" onClick={() => onInstall(u)}>
-                    Güncelle…
+                    Update…
                   </Button>
                 </div>
                 {notesOpen && (
@@ -178,7 +178,7 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
         </Section>
       )}
 
-      <Section title="Yüklü sürümler">
+      <Section title="Installed versions">
         {DEVICES.map(({ id, title, icon: Icon }) => {
           const d = devices.find((x) => x.id === id);
           const pending = updates.some((u) => u.device_id === id);
@@ -191,16 +191,16 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="font-semibold">{title}</span>
                 <span className="text-xs leading-[15px] text-secondary">
-                  {d?.firmware_version ? `Sürüm ${d.firmware_version}` : "Sürüm bilinmiyor"}
+                  {d?.firmware_version ? `Version ${d.firmware_version}` : "Version unknown"}
                 </span>
               </span>
               {upToDate ? (
                 <span className="flex items-center gap-1.5 text-xs text-success">
                   <Check aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={3} />
-                  Güncel
+                  Up to date
                 </span>
               ) : pending ? (
-                <span className="text-xs text-accent-text">Güncelleme var</span>
+                <span className="text-xs text-accent-text">Update available</span>
               ) : (
                 <ConnectionLabel connected={d?.connected ?? false} />
               )}
@@ -209,13 +209,13 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
         })}
       </Section>
 
-      <Section title="Ayarlar">
+      <Section title="Settings">
         <Row
-          label="Güncellemeleri otomatik denetle"
-          description="Uygulama açılınca denetler; cihaz bilgisi gönderilmez"
+          label="Check for updates automatically"
+          description="Checks when the app opens; no device information is sent"
         >
           <Switch
-            label="Güncellemeleri otomatik denetle"
+            label="Check for updates automatically"
             checked={autoCheck}
             onChange={(v) => {
               setAutoCheck(v);

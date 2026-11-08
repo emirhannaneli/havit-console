@@ -105,12 +105,12 @@ pub fn sync_keyboard_time(slot_id: u8) -> Result<String, String> {
     commit(&dev)?;
 
     record_packet("kb884l", "INFO", "0xFF13", format!("Time synchronized to {now}"), &[]);
-    Ok(format!("Saat eşitlendi: {:02}:{:02}:{:02}", now.hour(), now.minute(), now.second()))
+    Ok(format!("Clock set to {:02}:{:02}:{:02}.", now.hour(), now.minute(), now.second()))
 }
 
 pub fn apply_lighting(cfg: &Kb884lLightingConfig) -> Result<String, String> {
     if cfg.mode > 20 {
-        return Err(format!("Geçersiz ışık modu: {}", cfg.mode));
+        return Err(format!("Invalid lighting mode: {}", cfg.mode));
     }
     let dev = open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None)?;
 
@@ -143,7 +143,7 @@ pub fn apply_lighting(cfg: &Kb884lLightingConfig) -> Result<String, String> {
     commit(&dev)?;
     send_ctrl(&dev, "Flash NVRAM Save (0xF004)", &header(0xF0), true)?;
 
-    Ok("Aydınlatma klavyeye uygulandı.".to_string())
+    Ok("Lighting applied to the keyboard.".to_string())
 }
 
 pub fn apply_settings(cfg: &Kb884lSettingsConfig) -> Result<String, String> {
@@ -175,13 +175,13 @@ pub fn apply_settings(cfg: &Kb884lSettingsConfig) -> Result<String, String> {
     send_ctrl(&dev, &format!("Settings (WinLock={}, Fn={}, Sleep={}m)", cfg.win_lock, cfg.fn_toggle, cfg.sleep_minutes), &p, true)?;
     commit(&dev)?;
 
-    Ok("Klavye ayarları kaydedildi.".to_string())
+    Ok("Keyboard settings saved.".to_string())
 }
 
 pub fn upload_lcd_frames(frames: &[EncodedLcdFrame], slot_id: u8) -> Result<String, String> {
     let frame_count = frames.len().min(255);
     if frame_count == 0 {
-        return Err("GIF veya görselde geçerli kare bulunamadı".to_string());
+        return Err("No usable frames found in the image or GIF.".to_string());
     }
 
     // FUN_00423640: buffer pre-filled with 0xFF; [0]=frame count, [1+i]=delay/2 (min 1),
@@ -235,5 +235,5 @@ pub fn upload_lcd_frames(frames: &[EncodedLcdFrame], slot_id: u8) -> Result<Stri
     result?;
     closed?;
 
-    Ok(format!("{frame_count} karelik animasyon ekrana yüklendi."))
+    Ok(format!("Uploaded a {frame_count}-frame animation to the screen."))
 }

@@ -16,18 +16,18 @@ interface Step {
 }
 
 const DELAYS: { id: DelayMode; label: string; hint: string }[] = [
-  { id: "recorded", label: "Kaydedilen gecikmeler", hint: "Tuşlar arasındaki gerçek süreler" },
-  { id: "fixed", label: "Sabit gecikme", hint: `Her adım arasında ${FIXED_DELAY_MS} ms` },
-  { id: "none", label: "Gecikme yok", hint: "Olabildiğince hızlı" },
+  { id: "recorded", label: "Recorded delays", hint: "The real timing between keys" },
+  { id: "fixed", label: "Fixed delay", hint: `${FIXED_DELAY_MS} ms between steps` },
+  { id: "none", label: "No delay", hint: "As fast as possible" },
 ];
 
 const PLAY: { id: PlayMode; label: string }[] = [
-  { id: "once", label: "Bir kez oynat" },
-  { id: "hold", label: "Basılı tutulurken yinele" },
-  { id: "toggle", label: "Tekrar basılana dek yinele" },
+  { id: "once", label: "Play once" },
+  { id: "hold", label: "Repeat while held" },
+  { id: "toggle", label: "Repeat until pressed again" },
 ];
 
-const keyLabel = (e: KeyboardEvent) => (e.key === " " ? "Boşluk" : e.key.length === 1 ? e.key.toUpperCase() : e.key);
+const keyLabel = (e: KeyboardEvent) => (e.key === " " ? "Space" : e.key.length === 1 ? e.key.toUpperCase() : e.key);
 
 const fmtClock = (ms: number) => {
   const s = Math.floor(ms / 1000);
@@ -43,7 +43,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
   keyName,
   onClose,
 }) => {
-  const [name, setName] = useState("Yeni makro");
+  const [name, setName] = useState("New macro");
   const [steps, setSteps] = useState<Step[]>([]);
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -105,7 +105,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
     <Sheet open={open} onClose={close} dismissable={!recording} labelledBy="macro-title" className="w-[760px]">
       <div className="flex max-h-[calc(100vh-32px)] flex-col">
         <h2 id="macro-title" className="m-0 flex h-11 flex-none items-center justify-center border-b border-separator bg-sidebar px-4 text-[13px] font-semibold">
-          Yeni makro · {keyName} tuşu
+          New macro · {keyName} key
         </h2>
 
         <div className="flex min-h-0 flex-1 flex-wrap">
@@ -128,27 +128,27 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                   aria-hidden="true"
                   className={cx("h-2.5 w-2.5", recording ? "rounded-[2px] bg-white" : "rounded-full bg-on-accent")}
                 />
-                {recording ? "Kaydı durdur" : "Kaydı başlat"}
+                {recording ? "Stop recording" : "Start recording"}
               </Button>
               <span role="status" aria-live="polite" className="min-w-[160px] flex-1 text-xs text-secondary">
                 {recording
-                  ? "Kaydediliyor. Tuşlara bas; Esc kaydı durdurur."
-                  : "Kayıt sırasında basılan tuşlar yalnızca listeye eklenir."}
+                  ? "Recording. Press keys; Esc stops."
+                  : "Keys pressed while recording are only added to the list."}
               </span>
               <span className="font-semibold tabular-nums">{fmtClock(elapsed)}</span>
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-1.5">
               <span className="px-1 text-[11px] font-semibold text-secondary">
-                Adımlar ({steps.length}/{MAX_STEPS})
+                Steps ({steps.length}/{MAX_STEPS})
               </span>
               <ol
-                aria-label="Makro adımları"
+                aria-label="Macro steps"
                 className="m-0 flex h-[220px] list-none flex-col divide-y divide-separator overflow-y-auto rounded-[10px] border border-separator bg-card p-0"
               >
                 {steps.length === 0 && (
                   <li className="flex flex-1 items-center justify-center px-6 text-center text-xs leading-4 text-secondary">
-                    Henüz adım yok. Kaydı başlat ve tuşlara bas; her basış ve bırakış buraya eklenir.
+                    No steps yet. Start recording and press keys; every press and release is added here.
                   </li>
                 )}
                 {steps.map((s, i) => (
@@ -161,13 +161,13 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
                       )}
                     >
                       <span aria-hidden="true">{s.down ? "↓" : "↑"}</span>
-                      <span className="sr-only">{s.down ? "Bas" : "Bırak"}</span>
+                      <span className="sr-only">{s.down ? "Press" : "Release"}</span>
                     </span>
                     <span className="flex-1 font-medium">{s.key}</span>
                     <span className="text-xs text-secondary tabular-nums">{shownDelay(s, i)}</span>
                     <Button
                       variant="plain"
-                      aria-label={`${i + 1}. adımı sil`}
+                      aria-label={`Delete step ${i + 1}`}
                       disabled={recording}
                       onClick={() => setSteps((prev) => prev.filter((_, j) => j !== i))}
                       className="h-7 w-7 px-0 text-secondary"
@@ -182,7 +182,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
 
           <aside className="flex w-[240px] flex-none flex-col gap-4 border-l border-separator bg-sidebar px-4 py-[18px] max-sm:w-full max-sm:border-l-0 max-sm:border-t">
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Gecikmeler</legend>
+              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Delays</legend>
               {DELAYS.map((d) => (
                 <label key={d.id} className="flex min-h-8 cursor-pointer items-start gap-2">
                   <input
@@ -200,7 +200,7 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
               ))}
             </fieldset>
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Oynatma</legend>
+              <legend className="mb-2 p-0 text-[11px] font-semibold text-secondary">Playback</legend>
               {PLAY.map((p) => (
                 <label key={p.id} className="flex min-h-7 cursor-pointer items-center gap-2">
                   <input
@@ -218,15 +218,15 @@ export const MacroRecorder: React.FC<{ open: boolean; keyName: string; onClose: 
         </div>
 
         <div className="flex flex-none flex-col gap-2 border-t border-separator bg-sidebar px-5 py-3">
-          <Notice tone="info" title="Makroyu klavyeye yazma henüz desteklenmiyor">
-            Kaydı burada deneyebilirsin; klavyeye kaydetme henüz desteklenmiyor.
+          <Notice tone="info" title="Saving macros to the keyboard isn’t supported yet">
+            You can record here; writing to the keyboard isn’t supported yet.
           </Notice>
           <div className="flex justify-end gap-2">
             <Button onClick={close} disabled={recording}>
-              Kapat
+              Close
             </Button>
             <Button variant="primary" disabled className="min-w-[110px]">
-              Cihaza kaydet
+              Save to device
             </Button>
           </div>
         </div>
