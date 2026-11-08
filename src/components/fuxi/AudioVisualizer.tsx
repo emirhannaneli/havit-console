@@ -48,7 +48,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           key={i}
           className={cx(
             "w-1.5 rounded-full transition-all duration-75",
-            h > 4 ? "bg-accent opacity-90 shadow-[0_0_8px_rgba(255,146,48,0.4)]" : "bg-secondary/25"
+            h > 4 ? "bg-accent opacity-90 shadow-[0_0_8px_rgba(246,48,55,0.4)]" : "bg-secondary/25"
           )}
           style={{ height: `${h}px` }}
         />

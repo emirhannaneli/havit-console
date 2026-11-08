@@ -21,9 +21,9 @@
   --label: #1d1d1f;
   --secondary: #6e6e73;
   --tertiary: #8e8e93;
-  --accent: #ff9230;
-  --accent-text: #b25000;
-  --on-accent: #1a0d06;
+  --accent: #f63037;
+  --accent-text: #d81b24;
+  --on-accent: #ffffff;
   --success: #248a3d;
   --success-dot: #30d158;
   --warning: #a05a00;
@@ -50,9 +50,9 @@
     --label: #e6e6e6;
     --secondary: #9a9a9a;
     --tertiary: #7a7a7a;
-    --accent: #ff9230;
-    --accent-text: #ffb266;
-    --on-accent: #1a0d06;
+    --accent: #f63037;
+    --accent-text: #ff575d;
+    --on-accent: #ffffff;
     --success: #30d158;
     --success-dot: #30d158;
     --warning: #ffd60a;

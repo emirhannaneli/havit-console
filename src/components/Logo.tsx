@@ -26,12 +26,12 @@ export const LogoMark: React.FC<{
       <polygon
         points="512,96 880,308 880,716 512,928 144,716 144,308"
         fill="none"
-        stroke="#FF9230"
+        stroke="#F63037"
         strokeOpacity="0.16"
         strokeWidth="12"
       />
     )}
-    <g fill="#FF9230">
+    <g fill="#F63037">
       {detail === "full" ? (
         <>
           <polygon points="322,282 446,282 404,742 280,742" />
