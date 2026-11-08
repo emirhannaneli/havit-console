@@ -1,12 +1,15 @@
 import React from "react";
 import { RotateCcw } from "lucide-react";
-import { Button, Row, Section, Select } from "../ui";
+import { Button, Row, Section, Segmented } from "../ui";
 import { currentLang, translate, useT, type Lang, type MessageKey } from "../../i18n";
 
 export interface EqBand {
   freq: string;
   gain: number; // -20..+20 dB
 }
+
+/** Band gain limit in dB (each band spans -EQ_MAX..+EQ_MAX). */
+const EQ_MAX = 20;
 
 export const EQ_FREQUENCIES = [
   "30 Hz",
@@ -86,18 +89,18 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
       }
       footer={t("eq.footer")}
     >
-      <Row label={t("eq.preset")} htmlFor="eq-preset">
-        <Select
-          id="eq-preset"
-          value={isCustom ? "__custom" : activePreset}
+      <Row label={t("eq.preset")}>
+        <Segmented
+          label={t("eq.preset")}
+          value={isCustom ? "Custom" : activePreset}
           options={[
-            ...presetNames.map((name) => ({ value: name, label: eqPresetLabel(name, lang) })),
-            ...(isCustom ? [{ value: "__custom", label: t("eq.custom"), disabled: true }] : []),
+            ...presetNames.map((name) => ({ id: name, label: eqPresetLabel(name, lang) })),
+            { id: "Custom", label: t("eq.custom") },
           ]}
           onChange={(name) => {
             if (name in EQ_PRESETS) handleApplyPreset(name, EQ_PRESETS[name]);
+            else onPresetChange("Custom");
           }}
-          className="min-w-[220px]"
         />
       </Row>
 
@@ -107,27 +110,43 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
             aria-hidden="true"
             className="mt-5 flex h-40 w-8 flex-none flex-col justify-between text-right text-[11px] text-secondary tabular-nums"
           >
-            <span>+20</span>
+            <span>+{EQ_MAX}</span>
             <span>0</span>
-            <span>−20</span>
+            <span>−{EQ_MAX}</span>
           </div>
           {EQ_FREQUENCIES.map((freq, idx) => {
             const val = bands[idx] ?? 0;
+            // Position from the top of the 160 px track, as a percentage (0 dB = 50%).
+            const pos = 50 - (val / EQ_MAX) * 50;
             return (
-              <label key={freq} className="flex flex-1 flex-col items-center gap-1.5">
+              <label key={freq} className="flex flex-1 cursor-pointer flex-col items-center gap-1.5">
                 <span className="h-3.5 text-[11px] tabular-nums">{val > 0 ? `+${val}` : val}</span>
-                <input
-                  type="range"
-                  min={-20}
-                  max={20}
-                  step={1}
-                  value={val}
-                  aria-label={t("eq.band", { freq })}
-                  aria-valuetext={`${val} dB`}
-                  onChange={(e) => handleBandChange(idx, Number(e.target.value))}
-                  className="h-40 w-6"
-                  style={{ writingMode: "vertical-lr", direction: "rtl" }}
-                />
+                <span className="relative flex h-40 w-full justify-center">
+                  <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px bg-control-border" />
+                  <span aria-hidden="true" className="h-full w-1 rounded-full bg-control" />
+                  <span
+                    aria-hidden="true"
+                    className="absolute w-1 rounded-full bg-accent"
+                    style={{ top: `${Math.min(pos, 50)}%`, height: `${Math.abs(50 - pos)}%` }}
+                  />
+                  <input
+                    type="range"
+                    min={-EQ_MAX}
+                    max={EQ_MAX}
+                    step={1}
+                    value={val}
+                    aria-label={t("eq.band", { freq })}
+                    aria-valuetext={`${val} dB`}
+                    onChange={(e) => handleBandChange(idx, Number(e.target.value))}
+                    className="peer absolute inset-0 m-0 h-full w-full cursor-pointer opacity-0"
+                    style={{ writingMode: "vertical-lr", direction: "rtl" }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] peer-focus-visible:ring-2 peer-focus-visible:ring-focus"
+                    style={{ top: `${pos}%` }}
+                  />
+                </span>
                 <span className="text-[11px] whitespace-nowrap text-secondary">{freq}</span>
               </label>
             );
