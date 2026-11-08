@@ -55,6 +55,8 @@ export const en = {
   "devices.fwNotice.title_other": "{count} firmware updates available",
   "devices.fwNotice.body": "The device stops responding for about a minute while it updates.",
   "devices.fwNotice.go": "Go to Updates",
+  "devices.conn.usb": "USB wired",
+  "devices.conn.wireless": "2.4 GHz wireless receiver",
   "devices.section.title": "Devices",
   "devices.section.footer": "A newly connected Havit device appears here within a few seconds.",
   "devices.notScanned": "Not scanned yet",

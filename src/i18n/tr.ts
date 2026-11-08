@@ -48,6 +48,8 @@ export const tr: Record<MessageKey, string> = {
   "devices.fwNotice.title_other": "{count} firmware güncellemesi hazır",
   "devices.fwNotice.body": "Güncelleme sırasında cihaz yaklaşık bir dakika yanıt vermez.",
   "devices.fwNotice.go": "Güncellemelere git",
+  "devices.conn.usb": "USB kablolu",
+  "devices.conn.wireless": "2.4 GHz kablosuz alıcı",
   "devices.section.title": "Cihazlar",
   "devices.section.footer": "Yeni bir Havit cihazı taktığında birkaç saniye içinde burada görünür.",
   "devices.notScanned": "Henüz taranmadı",

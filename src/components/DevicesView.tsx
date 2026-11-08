@@ -32,6 +32,9 @@ export const BetaBadge: React.FC<{ className?: string }> = ({ className }) => {
 
 export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scanError, onOpen, updateCount }) => {
   const { t, tp } = useT();
+  // The Rust side reports a few fixed English labels; map the known ones to the UI language.
+  const connectionLabel = (raw?: string) =>
+    raw === "USB wired" ? t("devices.conn.usb") : raw === "2.4 GHz wireless receiver" ? t("devices.conn.wireless") : raw;
   const scanned = devices.length > 0;
   const [updateDismissed, setUpdateDismissed] = useState(false);
   const [report, setReport] = useState<{ open: boolean; deviceId?: string }>({ open: false });
@@ -72,7 +75,7 @@ export const DevicesView: React.FC<DevicesViewProps> = ({ devices, loading, scan
               ? t("app.scanning")
               : t("devices.notScanned")
             : connected
-              ? [d?.connection_type, d?.firmware_version && t("common.version", { version: d.firmware_version })]
+              ? [connectionLabel(d?.connection_type), d?.firmware_version && t("common.version", { version: d.firmware_version })]
                   .filter(Boolean)
                   .join(" · ")
               : t("common.notConnected");
