@@ -48,10 +48,11 @@ const DIRECTION_VALUES: Record<number, [number, number]> = {
 /** Vendor default direction when switching to a mode. */
 const defaultDirection = (mode: number) => DIRECTION_VALUES[mode]?.[0] ?? 0;
 
-// Fully saturated values: LEDs add every channel at full strength, so the softened UI system
-// colors (e.g. #ff453a) came out washed out on the keys. Each swatch shows what is sent.
+// r/g/b are what the keyboard gets, tuned for its LEDs: fully saturated (softened UI colors
+// such as #ff453a came out washed out) and with less green in mixes, since its green LEDs
+// are strong (255/80/0 looked yellow). `hex` is the on-screen swatch.
 const PRESET_COLORS: { key: MessageKey; r: number; g: number; b: number; hex: string }[] = [
-  { key: "lighting.color.orange", r: 255, g: 80, b: 0, hex: "#ff5000" },
+  { key: "lighting.color.orange", r: 255, g: 28, b: 0, hex: "#ff7a00" },
   { key: "lighting.color.red", r: 255, g: 0, b: 0, hex: "#ff0000" },
   { key: "lighting.color.yellow", r: 255, g: 190, b: 0, hex: "#ffbe00" },
   { key: "lighting.color.green", r: 0, g: 255, b: 0, hex: "#00ff00" },
