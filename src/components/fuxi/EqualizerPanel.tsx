@@ -1,6 +1,6 @@
 import React from "react";
 import { RotateCcw } from "lucide-react";
-import { Button, Row, Section, Segmented } from "../ui";
+import { Button, Row, Section, Select } from "../ui";
 import { currentLang, translate, useT, type Lang, type MessageKey } from "../../i18n";
 
 export interface EqBand {
@@ -89,13 +89,16 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
       }
       footer={t("eq.footer")}
     >
-      <Row label={t("eq.preset")}>
-        <Segmented
-          label={t("eq.preset")}
+      <Row label={t("eq.preset")} htmlFor="eq-preset">
+        {/* A dropdown, not a segmented control: nine presets wrap onto two lines at the
+            minimum window width, and translated names make that worse. */}
+        <Select
+          id="eq-preset"
           value={isCustom ? "Custom" : activePreset}
+          className="min-w-[200px]"
           options={[
-            ...presetNames.map((name) => ({ id: name, label: eqPresetLabel(name, lang) })),
-            { id: "Custom", label: t("eq.custom") },
+            ...presetNames.map((name) => ({ value: name, label: eqPresetLabel(name, lang) })),
+            { value: "Custom", label: t("eq.custom") },
           ]}
           onChange={(name) => {
             if (name in EQ_PRESETS) handleApplyPreset(name, EQ_PRESETS[name]);
