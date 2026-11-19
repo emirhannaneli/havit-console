@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, ChevronLeft, Download, PanelLeft, RefreshCw } from "lucide-react";
+import { CheckCircle2, ChevronLeft, Download, KeyRound, PanelLeft, RefreshCw } from "lucide-react";
 import type {
   DetectedDeviceStatus,
   FirmwareUpdate,
@@ -16,7 +16,12 @@ import { useAppUpdate } from "./components/updates/useAppUpdate";
 import { FirmwareDialog } from "./components/updates/FirmwareDialog";
 import { ONBOARDED_PREF, OnboardingSheet } from "./components/OnboardingSheet";
 import { Button, readPref, Select, StatusDot } from "./components/ui";
-import { checkFirmwareUpdates, fetchConnectedDevices } from "./api";
+import {
+  checkDeviceAccessSetup,
+  checkFirmwareUpdates,
+  fetchConnectedDevices,
+  installDeviceAccess,
+} from "./api";
 import { DeviceSettingsProvider } from "./state/DeviceSettings";
 import { reportInventory } from "./telemetry";
 import { LANGUAGES, useT, type MessageKey } from "./i18n";
@@ -106,6 +111,30 @@ export default function App() {
 
   const scanNow = useCallback(() => refreshHardware(true), [refreshHardware]);
 
+  // Linux: the udev rule may be missing or older than this version (AppImage updates
+  // don't touch it), so offer to install it instead of failing on every command.
+  const [accessNeeded, setAccessNeeded] = useState(false);
+  const [accessBusy, setAccessBusy] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkDeviceAccessSetup().then(setAccessNeeded, () => setAccessNeeded(false));
+  }, []);
+
+  const setUpAccess = useCallback(async () => {
+    setAccessBusy(true);
+    setAccessError(null);
+    try {
+      await installDeviceAccess();
+      setAccessNeeded(await checkDeviceAccessSetup());
+      void refreshHardware(true);
+    } catch (err) {
+      setAccessError(String(err));
+    } finally {
+      setAccessBusy(false);
+    }
+  }, [refreshHardware]);
+
   useEffect(() => {
     refreshHardware();
     // Auto-refresh devices every 5 seconds
@@ -183,6 +212,25 @@ export default function App() {
               </span>
             </Button>
           </header>
+
+          {accessNeeded && (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-accent/30 bg-accent/15 px-4 py-2 text-xs"
+            >
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <KeyRound aria-hidden="true" className="mt-px h-4 w-4 flex-none text-accent" />
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-medium text-label">{t("access.title")}</span>
+                  <span className="text-secondary">{t("access.body")}</span>
+                  {accessError && <span className="text-danger">{accessError}</span>}
+                </div>
+              </div>
+              <Button variant="primary" onClick={setUpAccess} disabled={accessBusy}>
+                {accessBusy ? t("access.working") : t("access.button")}
+              </Button>
+            </div>
+          )}
 
           {appUpdate.state.phase === "available" && view !== "updates" && (
             <div className="flex items-center justify-between gap-3 border-b border-accent/30 bg-accent/15 px-4 py-2 text-xs">

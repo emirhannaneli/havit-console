@@ -36,8 +36,8 @@ impl UsbFeatureDevice {
 
         let handle = device.open().map_err(|e| match e {
             rusb::Error::Access => format!(
-                "No permission to open USB device 0x{vid:04X}:0x{pid:04X}; install the udev rule \
-                 (see README, \"Linux udev rule\") and replug the device"
+                "No permission to open USB device 0x{vid:04X}:0x{pid:04X}; choose \"Set up access\" \
+                 at the top of the window"
             ),
             e => format!("Failed to open USB device: {e}"),
         })?;

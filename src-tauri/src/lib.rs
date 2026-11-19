@@ -1,3 +1,4 @@
+pub mod device_access;
 pub mod device_registry;
 pub mod devices;
 pub mod packet_log;
@@ -210,6 +211,19 @@ fn packet_log_list() -> Result<Vec<PacketLogEntry>, String> {
 }
 
 #[tauri::command]
+fn device_access_setup_needed() -> bool {
+    device_access::setup_needed()
+}
+
+/// Runs pkexec, which blocks until the user answers the password dialog.
+#[tauri::command]
+async fn device_access_install() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(device_access::install)
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 fn packet_log_clear() -> Result<(), String> {
     clear_logs();
     Ok(())
@@ -304,6 +318,8 @@ pub fn run() {
             profile_delete,
             packet_log_list,
             packet_log_clear,
+            device_access_setup_needed,
+            device_access_install,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Havit Console");

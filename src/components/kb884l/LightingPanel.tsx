@@ -48,16 +48,19 @@ const DIRECTION_VALUES: Record<number, [number, number]> = {
 /** Vendor default direction when switching to a mode. */
 const defaultDirection = (mode: number) => DIRECTION_VALUES[mode]?.[0] ?? 0;
 
+// r/g/b are what the keyboard gets, tuned for its LEDs: fully saturated (softened UI colors
+// such as #ff453a came out washed out) and with less green in mixes, since its green LEDs
+// are strong (255/80/0 looked yellow, 255/190/0 a pale yellow). `hex` is the on-screen swatch.
 const PRESET_COLORS: { key: MessageKey; r: number; g: number; b: number; hex: string }[] = [
-  { key: "lighting.color.orange", r: 255, g: 146, b: 48, hex: "#ff9230" },
-  { key: "lighting.color.red", r: 255, g: 69, b: 58, hex: "#ff453a" },
-  { key: "lighting.color.yellow", r: 255, g: 214, b: 10, hex: "#ffd60a" },
-  { key: "lighting.color.green", r: 48, g: 209, b: 88, hex: "#30d158" },
-  { key: "lighting.color.cyan", r: 100, g: 210, b: 255, hex: "#64d2ff" },
-  { key: "lighting.color.blue", r: 10, g: 132, b: 255, hex: "#0a84ff" },
-  { key: "lighting.color.purple", r: 191, g: 90, b: 242, hex: "#bf5af2" },
-  { key: "lighting.color.pink", r: 255, g: 55, b: 95, hex: "#ff375f" },
-  { key: "lighting.color.white", r: 242, g: 242, b: 247, hex: "#f2f2f7" },
+  { key: "lighting.color.orange", r: 255, g: 28, b: 0, hex: "#ff7a00" },
+  { key: "lighting.color.red", r: 255, g: 0, b: 0, hex: "#ff0000" },
+  { key: "lighting.color.yellow", r: 255, g: 130, b: 0, hex: "#ffd000" },
+  { key: "lighting.color.green", r: 0, g: 255, b: 0, hex: "#00ff00" },
+  { key: "lighting.color.cyan", r: 0, g: 255, b: 255, hex: "#00ffff" },
+  { key: "lighting.color.blue", r: 0, g: 0, b: 255, hex: "#0000ff" },
+  { key: "lighting.color.purple", r: 150, g: 0, b: 255, hex: "#9600ff" },
+  { key: "lighting.color.pink", r: 255, g: 0, b: 120, hex: "#ff0078" },
+  { key: "lighting.color.white", r: 255, g: 255, b: 255, hex: "#ffffff" },
 ];
 
 interface LightingPanelProps {
