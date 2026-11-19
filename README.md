@@ -119,26 +119,89 @@ and submit reports via **Report compatibility…**. Details: [`docs/compatibilit
 
 ## Install
 
-Download the file for your system from the
-[latest release](https://github.com/emirhannaneli/havit-console/releases/latest). The app
-updates itself afterwards (on Linux, the AppImage build).
+### Quick install
 
-| System | File | Notes |
+**Windows 10/11 (64-bit)**, in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/emirhannaneli/havit-console/main/scripts/install.ps1 | iex
+```
+
+**macOS 11+ (Apple silicon and Intel)** and **Linux (x86_64)**, in a terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/emirhannaneli/havit-console/main/scripts/install.sh | bash
+```
+
+The scripts download the right file from the
+[latest release](https://github.com/emirhannaneli/havit-console/releases/latest) and install it:
+
+- **Windows:** runs the setup wizard. Per-user install, no administrator prompt; WebView2 is
+  installed automatically if missing.
+- **macOS:** copies the app to `/Applications` (or `~/Applications`) and clears the
+  Gatekeeper quarantine flag, since the app is not notarized yet.
+- **Linux:** installs the AppImage into `~/.local/share/havit-console`, adds a menu entry and
+  the `havit-console` command, and asks for `sudo` once to install the
+  [udev rule](#linux-udev-rule) so the devices work without root.
+
+The app updates itself afterwards (on Linux, the AppImage build). Pass options to the
+shell script with `bash -s --`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/emirhannaneli/havit-console/main/scripts/install.sh | bash -s -- --deb
+```
+
+| Option | Effect |
+| :--- | :--- |
+| `--version X.Y.Z` | Install a specific release. |
+| `--deb` | Linux: install the `.deb` package system-wide (Debian, Ubuntu, Mint, Pop!_OS). It includes the udev rule but does not update itself; rerun the script to upgrade. |
+| `--no-udev` | Linux: skip the udev rule. |
+| `--uninstall` | Remove the app (settings and profiles are kept). |
+
+On Windows, `& ([scriptblock]::Create((irm <url>))) -Version X.Y.Z -Silent` installs a
+specific version without the wizard.
+
+### Manual install
+
+Download the file for your system from the
+[latest release](https://github.com/emirhannaneli/havit-console/releases/latest):
+
+| System | File | Steps |
 | :--- | :--- | :--- |
-| Windows 10/11 (64-bit) | `Havit Console_X.Y.Z_x64-setup.exe` | Installs per user, no administrator prompt. WebView2 is installed automatically if missing. |
-| macOS 11+ (Apple silicon and Intel) | `Havit Console_X.Y.Z_universal.dmg` | Not notarized yet: on first launch, right-click the app and choose **Open**. |
-| Linux (x86_64) | `.AppImage` or `.deb` | Needs the udev rule below to reach the devices without root. |
+| Windows 10/11 (64-bit) | `Havit.Console_X.Y.Z_x64-setup.exe` | Run it. If SmartScreen warns, choose **More info → Run anyway**. |
+| macOS 11+ | `Havit.Console_X.Y.Z_universal.dmg` | Open it and drag **Havit Console** to **Applications**. On first launch, right-click the app and choose **Open** (or run `xattr -dr com.apple.quarantine "/Applications/Havit Console.app"`). |
+| Debian / Ubuntu | `Havit.Console_X.Y.Z_amd64.deb` | `sudo apt install ./Havit.Console_X.Y.Z_amd64.deb`. The udev rule is installed with the package. |
+| Other Linux | `Havit.Console_X.Y.Z_amd64.AppImage` | `chmod +x Havit.Console_*.AppImage`, then run it. Add the udev rule below. |
 
 Headset volume, balance and microphone controls use Windows CoreAudio and are available on
 Windows only for now. Keyboard features work on every system.
 
-**Linux udev rule.** Save as `/etc/udev/rules.d/70-havit-console.rules`, then run
-`sudo udevadm control --reload-rules && sudo udevadm trigger` and replug the devices:
+### Linux udev rule
 
-```
+Linux only lets root open HID devices unless a udev rule grants access. The install script
+and the `.deb` package set this up; for the AppImage installed by hand, save the rule as
+`/etc/udev/rules.d/70-havit-console.rules`:
+
+```bash
+sudo tee /etc/udev/rules.d/70-havit-console.rules >/dev/null <<'EOF'
 KERNEL=="hidraw*", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", TAG+="uaccess"
 KERNEL=="hidraw*", ATTRS{idVendor}=="040b", ATTRS{idProduct}=="0897", TAG+="uaccess"
+EOF
+sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
+
+Then replug the devices. The same file lives in
+[`src-tauri/linux/70-havit-console.rules`](src-tauri/linux/70-havit-console.rules).
+
+### Troubleshooting
+
+- **Linux: the AppImage does not start.** Run it from a terminal to see the error. On
+  systems without FUSE, `./Havit.Console_*.AppImage --appimage-extract-and-run` works, or
+  use the `.deb`.
+- **Linux: devices are listed but cannot be opened.** The udev rule is missing or the
+  devices were not replugged after installing it.
+- **macOS: "Havit Console is damaged and can't be opened".** That is the quarantine flag on
+  an unnotarized app; clear it with the `xattr` command above.
 
 ---
 
@@ -149,7 +212,9 @@ git clone https://github.com/emirhannaneli/havit-console.git
 cd havit-console
 npm install
 npm run tauri dev      # desktop app with hot reload
-npm run tauri build    # NSIS installer in src-tauri/target/release/bundle/nsis/
+npm run tauri build    # Windows: NSIS installer in src-tauri/target/release/bundle/nsis/
+npm run tauri build -- --bundles appimage,deb   # Linux
+npm run tauri build -- --bundles app,dmg        # macOS
 ```
 
 Requirements: Node.js 22 and Rust stable (MSVC on Windows; on Linux also the
