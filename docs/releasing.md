@@ -37,3 +37,11 @@ Everything runs on GitHub: `emirhannaneli/havit-console`.
 `bundle.targets` is `nsis` only: one `Havit Console_X.Y.Z_x64-setup.exe` with a
 Turkish/English wizard, per-user install (no admin prompt) and a Start Menu folder.
 WebView2 is downloaded silently by the installer if the machine lacks it.
+
+The Linux `.deb` installs `src-tauri/linux/70-havit-console.rules` into
+`/usr/lib/udev/rules.d/` and reloads udev from its post-install script
+(`bundle.linux.deb` in `tauri.conf.json`).
+
+`scripts/install.sh` (macOS, Linux) and `scripts/install.ps1` (Windows) pick release assets
+by suffix: `_x64-setup.exe`, `_universal.dmg`, `_amd64.AppImage`, `_amd64.deb`. Keep
+those names when changing bundle targets.

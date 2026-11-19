@@ -57,6 +57,15 @@
         "type": "downloadBootstrapper",
         "silent": true
       }
+    },
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/lib/udev/rules.d/70-havit-console.rules": "linux/70-havit-console.rules"
+        },
+        "postInstallScript": "linux/postinst.sh",
+        "postRemoveScript": "linux/postrm.sh"
+      }
     }
   },
   "plugins": {
