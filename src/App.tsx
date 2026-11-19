@@ -30,10 +30,15 @@ const TITLES: Record<View, MessageKey> = {
   diagnostics: "app.title.diagnostics",
 };
 
+/** Below this window width the sidebar starts hidden, so tiled windows keep room for content. */
+const SIDEBAR_AUTO_HIDE_WIDTH = 860;
+
 export default function App() {
   const { t, lang, setLang } = useT();
   const [view, setView] = useState<View>("devices");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => window.innerWidth >= SIDEBAR_AUTO_HIDE_WIDTH,
+  );
   const [devices, setDevices] = useState<DetectedDeviceStatus[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -67,6 +72,17 @@ export default function App() {
   useEffect(() => {
     if (readPref(AUTO_CHECK_PREF, true)) runUpdateCheck();
   }, [runUpdateCheck]);
+
+  useEffect(() => {
+    let wide = window.innerWidth >= SIDEBAR_AUTO_HIDE_WIDTH;
+    const onResize = () => {
+      const nowWide = window.innerWidth >= SIDEBAR_AUTO_HIDE_WIDTH;
+      if (nowWide !== wide) setSidebarOpen(nowWide);
+      wide = nowWide;
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const updateCount =
     (updateCheck?.updates.length ?? 0) +
@@ -162,7 +178,9 @@ export default function App() {
                 aria-hidden="true"
                 className={`h-4 w-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`}
               />
-              {loading ? t("app.scanning") : t("app.scan")}
+              <span className="max-[720px]:sr-only">
+                {loading ? t("app.scanning") : t("app.scan")}
+              </span>
             </Button>
           </header>
 

@@ -1,9 +1,9 @@
 use crate::devices::kb884l::image_codec::{rgba_to_rgb565_bytes, EncodedLcdFrame};
 use crate::packet_log::record_packet;
 use crate::transport::hid::{
-    find_hid_path, get_feature, open_hid_by_usage, read_timeout, send_feature, LongWriteHid,
+    find_hid_path, get_feature, open_hid_by_usage, read_timeout, send_feature, FeatureReports,
+    LongWriteHid,
 };
-use hidapi::HidDevice;
 use chrono::{Datelike, Local, Timelike};
 use serde::{Deserialize, Serialize};
 use std::thread::sleep;
@@ -13,6 +13,23 @@ const VID: u16 = 0x05AC;
 const PID: u16 = 0x024F;
 const USAGE_PAGE_CTRL: u16 = 0xFF13;
 const USAGE_PAGE_LCD: u16 = 0xFF68;
+/// USB interface number of the 0xFF13 control channel (MI_03).
+#[cfg(target_os = "linux")]
+const CTRL_INTERFACE: u8 = 3;
+
+/// Opens the 0xFF13 control channel. Linux's usbhid will not bind MI_03 (it has no IN
+/// endpoint), so there is no hidraw node; fall back to USB control transfers there.
+fn open_ctrl() -> Result<Box<dyn FeatureReports>, String> {
+    match open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None) {
+        Ok(dev) => Ok(Box::new(dev)),
+        #[cfg(target_os = "linux")]
+        Err(hid_err) => crate::transport::usb_ctrl::UsbFeatureDevice::open(VID, PID, CTRL_INTERFACE)
+            .map(|dev| Box::new(dev) as Box<dyn FeatureReports>)
+            .map_err(|usb_err| format!("{hid_err}; USB fallback: {usb_err}")),
+        #[cfg(not(target_os = "linux"))]
+        Err(e) => Err(e),
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Kb884lLightingConfig {
@@ -44,7 +61,7 @@ pub struct Kb884lSettingsConfig {
 
 const CTRL_DELAY: Duration = Duration::from_millis(10);
 
-fn send_ctrl(dev: &HidDevice, summary: &str, buf: &[u8; 65], ack: bool) -> Result<(), String> {
+fn send_ctrl(dev: &dyn FeatureReports, summary: &str, buf: &[u8; 65], ack: bool) -> Result<(), String> {
     send_feature(dev, "kb884l", "0xFF13", summary, buf)?;
     if !ack {
         return Ok(());
@@ -69,11 +86,11 @@ fn header(cmd: u8) -> [u8; 65] {
     p
 }
 
-fn begin(dev: &HidDevice) -> Result<(), String> {
+fn begin(dev: &dyn FeatureReports) -> Result<(), String> {
     send_ctrl(dev, "Transaction Start (0x1804)", &header(0x18), true)
 }
 
-fn commit(dev: &HidDevice) -> Result<(), String> {
+fn commit(dev: &dyn FeatureReports) -> Result<(), String> {
     send_ctrl(dev, "Commit (0x0204)", &header(0x02), true)
 }
 
@@ -81,7 +98,7 @@ fn commit(dev: &HidDevice) -> Result<(), String> {
 const PROFILE: u8 = 1;
 
 pub fn sync_keyboard_time(slot_id: u8) -> Result<String, String> {
-    let dev = open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None)?;
+    let dev = open_ctrl()?;
     let now = Local::now();
 
     begin(&dev)?;
@@ -112,7 +129,7 @@ pub fn apply_lighting(cfg: &Kb884lLightingConfig) -> Result<String, String> {
     if cfg.mode > 20 {
         return Err(format!("Invalid lighting mode: {}", cfg.mode));
     }
-    let dev = open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None)?;
+    let dev = open_ctrl()?;
 
     begin(&dev)?;
     let mut bank = header(0x13);
@@ -147,7 +164,7 @@ pub fn apply_lighting(cfg: &Kb884lLightingConfig) -> Result<String, String> {
 }
 
 pub fn apply_settings(cfg: &Kb884lSettingsConfig) -> Result<String, String> {
-    let dev = open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None)?;
+    let dev = open_ctrl()?;
 
     begin(&dev)?;
     let mut bank = header(0x17);
@@ -198,7 +215,7 @@ pub fn upload_lcd_frames(frames: &[EncodedLcdFrame], slot_id: u8) -> Result<Stri
     }
     let total_chunks = total_chunks as u16;
 
-    let ctrl_dev = open_hid_by_usage(VID, PID, USAGE_PAGE_CTRL, None)?;
+    let ctrl_dev = open_ctrl()?;
     // Open the LCD channel before starting so a missing interface can't strand a transaction.
     let lcd_path = find_hid_path(VID, PID, USAGE_PAGE_LCD)?;
     let lcd_writer = LongWriteHid::open(&lcd_path)?;

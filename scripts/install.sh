@@ -122,11 +122,13 @@ linux_udev() {
   cat > "$tmp/70-havit-console.rules" <<'RULES'
 # Havit Console: let the logged-in user open the supported Havit devices without root.
 KERNEL=="hidraw*", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="024f", TAG+="uaccess"
 KERNEL=="hidraw*", ATTRS{idVendor}=="040b", ATTRS{idProduct}=="0897", TAG+="uaccess"
 RULES
   sudo_cmd install -m 0644 "$tmp/70-havit-console.rules" "$UDEV_RULE"
   sudo_cmd udevadm control --reload-rules
   sudo_cmd udevadm trigger --subsystem-match=hidraw || true
+  sudo_cmd udevadm trigger --subsystem-match=usb --attr-match=idVendor=05ac || true
 }
 
 linux_install_appimage() {

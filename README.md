@@ -185,6 +185,7 @@ and the `.deb` package set this up; for the AppImage installed by hand, save the
 ```bash
 sudo tee /etc/udev/rules.d/70-havit-console.rules >/dev/null <<'EOF'
 KERNEL=="hidraw*", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="024f", TAG+="uaccess"
 KERNEL=="hidraw*", ATTRS{idVendor}=="040b", ATTRS{idProduct}=="0897", TAG+="uaccess"
 EOF
 sudo udevadm control --reload-rules && sudo udevadm trigger
