@@ -404,3 +404,21 @@ export async function openExternal(url: string): Promise<void> {
   }
   window.open(url, "_blank", "noopener,noreferrer");
 }
+
+// ---------------------------------------------------------------------------
+// Linux device access (udev rule)
+
+/** True on Linux when the installed udev rule is missing lines the app needs. */
+export async function checkDeviceAccessSetup(): Promise<boolean> {
+  if (isTauri()) {
+    return invoke<boolean>("device_access_setup_needed");
+  }
+  return false;
+}
+
+/** Installs the udev rule; the system asks for the password. */
+export async function installDeviceAccess(): Promise<void> {
+  if (isTauri()) {
+    return invoke("device_access_install");
+  }
+}
