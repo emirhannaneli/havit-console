@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.2](https://github.com/emirhannaneli/havit-console/compare/v0.7.1...v0.7.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* KB884L control channel on Linux, layout for tiled windows ([f64695b](https://github.com/emirhannaneli/havit-console/commit/f64695b797520464a643b9cd2e79068cca23ef82))
+* **kb884l:** reach the 0xFF13 control channel over libusb on Linux ([5cc776d](https://github.com/emirhannaneli/havit-console/commit/5cc776dd0ebb5050c6aaf57004c0591e7b371a34))
+* **ui:** fit tiled and narrow windows ([22996dd](https://github.com/emirhannaneli/havit-console/commit/22996dd2d76251ef786ad30ec41a4b4377fb33f6))
+
 ## [0.7.1](https://github.com/emirhannaneli/havit-console/compare/v0.7.0...v0.7.1) (2026-11-19)
 
 
