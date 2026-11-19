@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/emirhannaneli/havit-console/compare/v0.7.2...v0.8.0) (2026-11-19)
+
+
+### Features
+
+* **linux:** in-app device access setup; saturated KB884L preset colors ([c72feac](https://github.com/emirhannaneli/havit-console/commit/c72feac30056f01c09b52aff9ad58e4024331d4a))
+* **linux:** set up device access from the app ([39f7531](https://github.com/emirhannaneli/havit-console/commit/39f75314776b3af78581306e74b1c4426094a3f0))
+
+
+### Bug Fixes
+
+* **kb884l:** send less green for the orange preset so it doesn't look yellow ([e474b5d](https://github.com/emirhannaneli/havit-console/commit/e474b5d4ee67b32b0c3a8bb362d847da63a13fe0))
+* **kb884l:** send less green for the yellow preset so it doesn't look pale ([3f5ef2e](https://github.com/emirhannaneli/havit-console/commit/3f5ef2ed2f7c95d250da7214be5bf6eff095a377))
+* **kb884l:** use saturated preset colors so the keys match the swatches ([738412d](https://github.com/emirhannaneli/havit-console/commit/738412ded45518b3ae97a2ed3f79649186f69c7e))
+
 ## [0.7.2](https://github.com/emirhannaneli/havit-console/compare/v0.7.1...v0.7.2) (2026-11-19)
 
 
