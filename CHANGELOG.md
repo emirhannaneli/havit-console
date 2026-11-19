@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/emirhannaneli/havit-console/compare/v0.7.0...v0.7.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **fuxi:** show EQ presets in a dropdown so they fit narrow windows ([db8feb0](https://github.com/emirhannaneli/havit-console/commit/db8feb0ef8d3f4f8d2b7855bd298e7d0b942e5d1))
+
 ## [0.7.0](https://github.com/emirhannaneli/havit-console/compare/v0.6.0...v0.7.0) (2026-11-19)
 
 
