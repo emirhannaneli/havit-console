@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/emirhannaneli/havit-console/compare/v0.6.0...v0.7.0) (2026-11-19)
+
+
+### Features
+
+* **install:** add install scripts and per-platform install guide ([910ae0f](https://github.com/emirhannaneli/havit-console/commit/910ae0f65d326670a3cfe064e2b913715aada846))
+
 ## [0.6.0](https://github.com/emirhannaneli/havit-console/compare/v0.5.0...v0.6.0) (2026-11-08)
 
 
