@@ -92,29 +92,57 @@ pub fn write_output(
     })
 }
 
-pub fn send_feature(
-    dev: &HidDevice,
+/// Feature-report transport: hidapi everywhere, plus raw USB control transfers on Linux for
+/// interfaces the kernel leaves without a hidraw node (see `transport::usb_ctrl`).
+/// Buffers follow hidapi: byte 0 is the report id (0 = none).
+pub trait FeatureReports {
+    fn feature_send(&self, buf: &[u8]) -> Result<(), String>;
+    fn feature_get(&self, buf: &mut [u8]) -> Result<usize, String>;
+}
+
+impl FeatureReports for HidDevice {
+    fn feature_send(&self, buf: &[u8]) -> Result<(), String> {
+        self.send_feature_report(buf).map_err(|e| e.to_string())
+    }
+
+    fn feature_get(&self, buf: &mut [u8]) -> Result<usize, String> {
+        self.get_feature_report(buf).map_err(|e| e.to_string())
+    }
+}
+
+impl<T: FeatureReports + ?Sized> FeatureReports for Box<T> {
+    fn feature_send(&self, buf: &[u8]) -> Result<(), String> {
+        (**self).feature_send(buf)
+    }
+
+    fn feature_get(&self, buf: &mut [u8]) -> Result<usize, String> {
+        (**self).feature_get(buf)
+    }
+}
+
+pub fn send_feature<D: FeatureReports + ?Sized>(
+    dev: &D,
     device_id: &str,
     channel: &str,
     summary: &str,
     buf: &[u8],
 ) -> Result<(), String> {
     record_packet(device_id, "TX", channel, format!("Feature: {summary}"), buf);
-    dev.send_feature_report(buf).map_err(|e| {
+    dev.feature_send(buf).map_err(|e| {
         let msg = format!("HID send_feature_report failed ({summary}): {e}");
         record_packet(device_id, "ERR", channel, &msg, &[]);
         msg
     })
 }
 
-pub fn get_feature(
-    dev: &HidDevice,
+pub fn get_feature<D: FeatureReports + ?Sized>(
+    dev: &D,
     device_id: &str,
     channel: &str,
     summary: &str,
     buf: &mut [u8],
 ) -> Result<usize, String> {
-    let n = dev.get_feature_report(buf).map_err(|e| {
+    let n = dev.feature_get(buf).map_err(|e| {
         let msg = format!("HID get_feature_report failed ({summary}): {e}");
         record_packet(device_id, "ERR", channel, &msg, &[]);
         msg

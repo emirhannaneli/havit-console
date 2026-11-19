@@ -31,6 +31,11 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
 
+# Linux: the KB884L control interface has no hidraw node, so it is driven over libusb.
+# Vendored so the binary carries no runtime libusb dependency.
+[target.'cfg(target_os = "linux")'.dependencies]
+rusb = { version = "0.9", features = ["vendored"] }
+
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = [
   "Win32_Foundation",

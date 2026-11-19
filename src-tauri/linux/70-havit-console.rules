@@ -1,5 +1,7 @@
 # Havit Console: let the logged-in user open the supported Havit devices without root.
 # KB884L keyboard
 KERNEL=="hidraw*", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", TAG+="uaccess"
+# Its control interface has no hidraw node on Linux; the app reaches it over raw USB.
+SUBSYSTEM=="usb", ATTR{idVendor}=="05ac", ATTR{idProduct}=="024f", TAG+="uaccess"
 # Fuxi-H7 headset
 KERNEL=="hidraw*", ATTRS{idVendor}=="040b", ATTRS{idProduct}=="0897", TAG+="uaccess"
