@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/emirhannaneli/havit-console/compare/v0.8.0...v0.9.0) (2026-11-20)
+
+
+### Features
+
+* add an "Open at startup" setting ([1e26434](https://github.com/emirhannaneli/havit-console/commit/1e2643448153b48559edef4f5a1e3daf1ba03874))
+* add an "Open at startup" setting ([1f012b7](https://github.com/emirhannaneli/havit-console/commit/1f012b71c8eeccd0e97dca0d6da73968d629de25))
+
 ## [0.8.0](https://github.com/emirhannaneli/havit-console/compare/v0.7.2...v0.8.0) (2026-11-19)
 
 
