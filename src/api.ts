@@ -422,3 +422,23 @@ export async function installDeviceAccess(): Promise<void> {
     return invoke("device_access_install");
   }
 }
+
+// ---------------------------------------------------------------------------
+// Launch at login
+
+/** Whether the app is registered to start (in the tray) when the user signs in. */
+export async function isAutostartEnabled(): Promise<boolean> {
+  if (isTauri()) {
+    return invoke<boolean>("get_autostart");
+  }
+  return localStorage.getItem("havit_autostart") === "1";
+}
+
+/** Returns the state the OS actually registered after the change. */
+export async function setAutostartEnabled(on: boolean): Promise<boolean> {
+  if (isTauri()) {
+    return invoke<boolean>("set_autostart", { enabled: on });
+  }
+  localStorage.setItem("havit_autostart", on ? "1" : "0");
+  return on;
+}

@@ -447,6 +447,8 @@ export const vi: Record<MessageKey, string> = {
   "updates.share": "Chia sẻ báo cáo tương thích",
   "updates.share.desc":
     "Gửi ID thiết bị, phiên bản firmware và ứng dụng cùng nhật ký gói tin dưới dạng issue công khai trên GitHub khi phát hiện thiết bị chưa kiểm thử hoặc một lệnh bị lỗi. Không bao giờ gửi tên hay số sê-ri.",
+  "updates.autostart": "Mở khi khởi động",
+  "updates.autostart.desc": "Khởi động trong khay hệ thống khi bạn đăng nhập máy tính",
 
   // Firmware dialog
   "firmware.confirm.title": "Cập nhật firmware {device}?",

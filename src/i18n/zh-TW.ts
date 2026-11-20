@@ -447,6 +447,8 @@ export const zhTW: Record<MessageKey, string> = {
   "updates.share": "分享相容性回報",
   "updates.share.desc":
     "偵測到未經測試的裝置或指令失敗時，會將裝置 ID、韌體與 App 版本以及封包記錄以公開 GitHub issue 傳送。絕不包含名稱或序號。",
+  "updates.autostart": "開機時啟動",
+  "updates.autostart.desc": "登入電腦時於系統匣中啟動",
 
   // Firmware dialog
   "firmware.confirm.title": "要更新 {device} 的韌體嗎？",

@@ -447,6 +447,8 @@ export const id: Record<MessageKey, string> = {
   "updates.share": "Bagikan laporan kompatibilitas",
   "updates.share.desc":
     "Mengirim ID perangkat, versi firmware dan aplikasi, serta log paket sebagai issue GitHub publik saat perangkat yang belum diuji terdeteksi atau perintah gagal. Tidak pernah nama atau nomor seri.",
+  "updates.autostart": "Buka saat startup",
+  "updates.autostart.desc": "Dimulai di baki sistem saat Anda masuk ke komputer",
 
   // Firmware dialog
   "firmware.confirm.title": "Perbarui firmware {device}?",

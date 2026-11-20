@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AlertTriangle, Check, Headphones, Keyboard, RefreshCw } from "lucide-react";
 import { version as appVersion } from "../../../package.json";
 import type { DetectedDeviceStatus, FirmwareUpdate, FirmwareUpdateCheck } from "../../types";
 import { Button, ConnectionLabel, Notice, readPref, Row, Section, Switch, writePref } from "../ui";
 import type { AppUpdate } from "./useAppUpdate";
 import { autoSendEnabled, setAutoSend } from "../../telemetry";
+import { isAutostartEnabled, setAutostartEnabled } from "../../api";
 import { useT, type MessageKey } from "../../i18n";
 
 const DEVICES: { id: string; titleKey: MessageKey; icon: React.ElementType }[] = [
@@ -42,6 +43,24 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
   const [openNotes, setOpenNotes] = useState<string | null>(null);
   const [autoCheck, setAutoCheck] = useState(() => readPref(AUTO_CHECK_PREF, true));
   const [shareReports, setShareReports] = useState(autoSendEnabled);
+  // null until the OS login entry has been read, so the switch doesn't flash the wrong state.
+  const [autostart, setAutostart] = useState<boolean | null>(null);
+  const [autostartError, setAutostartError] = useState<string | null>(null);
+
+  useEffect(() => {
+    isAutostartEnabled().then(setAutostart, () => setAutostart(false));
+  }, []);
+
+  const toggleAutostart = async (on: boolean) => {
+    setAutostart(on);
+    setAutostartError(null);
+    try {
+      setAutostart(await setAutostartEnabled(on));
+    } catch (err) {
+      setAutostart(!on);
+      setAutostartError(String(err));
+    }
+  };
   const updates = check?.updates ?? [];
   const a = app.state;
   const appBusy = a.phase === "downloading";
@@ -214,6 +233,17 @@ export const UpdatesView: React.FC<UpdatesViewProps> = ({
       </Section>
 
       <Section title={t("updates.settings.title")}>
+        <Row
+          label={t("updates.autostart")}
+          description={autostartError ?? t("updates.autostart.desc")}
+        >
+          <Switch
+            label={t("updates.autostart")}
+            checked={autostart ?? false}
+            disabled={autostart === null}
+            onChange={(v) => void toggleAutostart(v)}
+          />
+        </Row>
         <Row
           label={t("updates.autoCheck")}
           description={t("updates.autoCheck.desc")}

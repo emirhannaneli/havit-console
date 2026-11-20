@@ -447,6 +447,8 @@ export const pl: Record<MessageKey, string> = {
   "updates.share": "Udostępniaj raporty zgodności",
   "updates.share.desc":
     "Wysyła identyfikatory urządzeń, wersje oprogramowania układowego i aplikacji oraz dziennik pakietów jako publiczne zgłoszenie na GitHub, gdy zostanie wykryte nieprzetestowane urządzenie lub polecenie się nie powiedzie. Nigdy nazw ani numerów seryjnych.",
+  "updates.autostart": "Uruchamiaj przy starcie",
+  "updates.autostart.desc": "Uruchamia się w zasobniku systemowym po zalogowaniu",
 
   // Firmware dialog
   "firmware.confirm.title": "Zaktualizować oprogramowanie układowe urządzenia {device}?",

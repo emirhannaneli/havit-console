@@ -30,6 +30,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
 
 # Linux: the KB884L control interface has no hidraw node, so it is driven over libusb.
 # Vendored so the binary carries no runtime libusb dependency.

@@ -449,6 +449,8 @@ export const en = {
   "updates.share": "Share compatibility reports",
   "updates.share.desc":
     "Sends device IDs, firmware and app versions and the packet log as a public GitHub issue when an untested device is detected or a command fails. Never names or serial numbers.",
+  "updates.autostart": "Open at startup",
+  "updates.autostart.desc": "Starts in the tray when you sign in to your computer",
 
   // Firmware dialog
   "firmware.confirm.title": "Update {device} firmware?",

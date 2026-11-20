@@ -429,6 +429,8 @@ export const tr: Record<MessageKey, string> = {
   "updates.share": "Uyumluluk raporlarını paylaş",
   "updates.share.desc":
     "Test edilmemiş bir cihaz algılandığında ya da bir komut başarısız olduğunda cihaz kimlikleri, firmware ve uygulama sürümleri ile paket kaydı herkese açık bir GitHub issue olarak gönderilir. Ad veya seri numarası asla gönderilmez.",
+  "updates.autostart": "Başlangıçta aç",
+  "updates.autostart.desc": "Bilgisayarda oturum açtığınızda sistem tepsisinde başlar",
 
   "firmware.confirm.title": "{device} firmware’i güncellensin mi?",
   "firmware.confirm.body": "Güncelleme sırasında cihaz yaklaşık bir dakika yanıt vermez, sonra kendiliğinden yeniden başlar.",

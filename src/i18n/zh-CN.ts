@@ -447,6 +447,8 @@ export const zhCN: Record<MessageKey, string> = {
   "updates.share": "分享兼容性报告",
   "updates.share.desc":
     "检测到未经测试的设备或命令失败时，将设备 ID、固件和应用版本以及数据包日志作为公开的 GitHub issue 发送。绝不包含名称或序列号。",
+  "updates.autostart": "开机时启动",
+  "updates.autostart.desc": "登录电脑时在系统托盘中启动",
 
   // Firmware dialog
   "firmware.confirm.title": "要更新 {device} 的固件吗？",

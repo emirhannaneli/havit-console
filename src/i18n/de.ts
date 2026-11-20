@@ -447,6 +447,8 @@ export const de: Record<MessageKey, string> = {
   "updates.share": "Kompatibilitätsberichte teilen",
   "updates.share.desc":
     "Sendet Geräte-IDs, Firmware- und App-Versionen sowie das Paketprotokoll als öffentliches GitHub-Issue, wenn ein ungetestetes Gerät erkannt wird oder ein Befehl fehlschlägt. Niemals Namen oder Seriennummern.",
+  "updates.autostart": "Beim Anmelden starten",
+  "updates.autostart.desc": "Startet bei der Anmeldung im Infobereich",
 
   // Firmware dialog
   "firmware.confirm.title": "Firmware von {device} aktualisieren?",

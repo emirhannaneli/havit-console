@@ -3,6 +3,8 @@ pub mod device_registry;
 pub mod devices;
 pub mod packet_log;
 pub mod profiles;
+#[cfg(target_os = "linux")]
+mod session_autostart;
 pub mod transport;
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
@@ -275,19 +277,71 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Passed by the login entries (XDG/registry and the systemd unit) so a boot launch stays in the tray.
+const HIDDEN_ARG: &str = "--hidden";
+
+/// Mirrors the autostart state into a systemd user unit, so compositors that skip
+/// `~/.config/autostart` (Hyprland, Sway, ...) still launch us on login.
+#[cfg(target_os = "linux")]
+fn sync_session_unit<R: tauri::Runtime>(app: &impl Manager<R>, enabled: bool) {
+    let result = if enabled {
+        let appimage = app.env().appimage;
+        session_autostart::enable(appimage.as_deref().map(std::path::Path::new), HIDDEN_ARG)
+    } else {
+        session_autostart::disable()
+    };
+    if let Err(e) = result {
+        record_packet("app", "ERR", "autostart", format!("systemd unit: {e}"), &[]);
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn sync_session_unit<R: tauri::Runtime>(_app: &impl Manager<R>, _enabled: bool) {}
+
+#[tauri::command]
+fn get_autostart(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().map_err(|e| e.to_string())
+}
+
+/// Returns the state actually registered with the OS after the change.
+#[tauri::command]
+fn set_autostart(enabled: bool, app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    let launcher = app.autolaunch();
+    if enabled { launcher.enable() } else { launcher.disable() }.map_err(|e| e.to_string())?;
+    let enabled = launcher.is_enabled().map_err(|e| e.to_string())?;
+    sync_session_unit(&app, enabled);
+    Ok(enabled)
+}
+
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            show_main_window(app);
+        // A login launch (XDG entry and systemd unit can both fire) stays in the tray.
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if !args.iter().any(|a| a == HIDDEN_ARG) {
+                show_main_window(app);
+            }
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_autostart::Builder::new().args([HIDDEN_ARG]).build())
         .setup(|app| {
             setup_tray(app)?;
-            show_main_window(app.handle());
+            // Every start: refreshes the systemd unit's path if the AppImage moved.
+            {
+                use tauri_plugin_autostart::ManagerExt;
+                if let Ok(enabled) = app.autolaunch().is_enabled() {
+                    sync_session_unit(app, enabled);
+                }
+            }
+            // The window starts hidden (tauri.conf.json) to avoid a flash on login.
+            if !std::env::args().any(|a| a == HIDDEN_ARG) {
+                show_main_window(app.handle());
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -319,6 +373,8 @@ pub fn run() {
             packet_log_list,
             packet_log_clear,
             device_access_setup_needed,
+            get_autostart,
+            set_autostart,
             device_access_install,
         ])
         .run(tauri::generate_context!())
