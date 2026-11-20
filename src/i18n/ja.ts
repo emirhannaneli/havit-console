@@ -447,6 +447,8 @@ export const ja: Record<MessageKey, string> = {
   "updates.share": "互換性レポートを共有",
   "updates.share.desc":
     "未テストのデバイスが検出された場合やコマンドが失敗した場合に、デバイス ID、ファームウェアとアプリのバージョン、パケットログを公開の GitHub issue として送信します。名前やシリアル番号は決して含まれません。",
+  "updates.autostart": "ログイン時に起動",
+  "updates.autostart.desc": "ログイン時にシステムトレイで起動します",
 
   // Firmware dialog
   "firmware.confirm.title": "{device} のファームウェアをアップデートしますか？",

@@ -447,6 +447,8 @@ export const uk: Record<MessageKey, string> = {
   "updates.share": "Надсилати звіти про сумісність",
   "updates.share.desc":
     "У разі виявлення неперевіреного пристрою або збою команди надсилає ідентифікатори пристрою, версії прошивки й застосунку та журнал пакетів як публічний issue на GitHub. Ніколи — імена чи серійні номери.",
+  "updates.autostart": "Запускати під час входу",
+  "updates.autostart.desc": "Запускається в області сповіщень під час входу в систему",
 
   // Firmware dialog
   "firmware.confirm.title": "Оновити прошивку {device}?",

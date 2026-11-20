@@ -447,6 +447,8 @@ export const hi: Record<MessageKey, string> = {
   "updates.share": "संगतता रिपोर्ट साझा करें",
   "updates.share.desc":
     "जब कोई अपरीक्षित डिवाइस पहचाना जाए या कोई कमांड विफल हो, तो डिवाइस ID, फ़र्मवेयर और ऐप संस्करण तथा पैकेट लॉग सार्वजनिक GitHub इश्यू के रूप में भेजता है। नाम या सीरियल नंबर कभी नहीं।",
+  "updates.autostart": "स्टार्टअप पर खोलें",
+  "updates.autostart.desc": "कंप्यूटर में साइन इन करने पर सिस्टम ट्रे में शुरू होता है",
 
   // Firmware dialog
   "firmware.confirm.title": "{device} फ़र्मवेयर अपडेट करें?",

@@ -447,6 +447,8 @@ export const ptBR: Record<MessageKey, string> = {
   "updates.share": "Compartilhar relatórios de compatibilidade",
   "updates.share.desc":
     "Envia os IDs do dispositivo, as versões de firmware e do app e o log de pacotes como uma issue pública no GitHub quando um dispositivo não testado é detectado ou um comando falha. Nunca nomes nem números de série.",
+  "updates.autostart": "Abrir ao iniciar",
+  "updates.autostart.desc": "Inicia na bandeja do sistema quando você entra no computador",
 
   // Firmware dialog
   "firmware.confirm.title": "Atualizar o firmware do {device}?",

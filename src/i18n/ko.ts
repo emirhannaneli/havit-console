@@ -447,6 +447,8 @@ export const ko: Record<MessageKey, string> = {
   "updates.share": "호환성 보고서 공유",
   "updates.share.desc":
     "테스트되지 않은 장치가 감지되거나 명령이 실패하면 장치 ID, 펌웨어 및 앱 버전, 패킷 로그를 공개 GitHub 이슈로 전송합니다. 이름이나 일련번호는 절대 포함되지 않습니다.",
+  "updates.autostart": "시작 시 실행",
+  "updates.autostart.desc": "컴퓨터에 로그인하면 시스템 트레이에서 시작됩니다",
 
   // Firmware dialog
   "firmware.confirm.title": "{device} 펌웨어를 업데이트할까요?",
